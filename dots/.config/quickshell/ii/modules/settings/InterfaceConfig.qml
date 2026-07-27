@@ -499,6 +499,18 @@ ContentPage {
             }
         }
 
+        ConfigSwitch {
+            buttonIcon: "groups"
+            text: Translation.tr('Room presence tab')
+            checked: Config.options.sidebar.statusphere.enable
+            onCheckedChanged: {
+                Config.options.sidebar.statusphere.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Who's around in your statusphere room, in the left sidebar.\nNeeds the statusphere cli and a registered account")
+            }
+        }
+
         ContentSubsection {
             title: Translation.tr("Quick toggles")
             

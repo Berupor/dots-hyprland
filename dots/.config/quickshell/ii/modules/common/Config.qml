@@ -537,6 +537,10 @@ Singleton {
                     property bool enable: true
                 }
 
+                property JsonObject statusphere: JsonObject {
+                    property bool enable: true
+                }
+
                 property JsonObject quickToggles: JsonObject {
                     property string style: "android" // Options: classic, android
                     property JsonObject android: JsonObject {
