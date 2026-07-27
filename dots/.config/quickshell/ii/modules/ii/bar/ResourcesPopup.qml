@@ -81,14 +81,7 @@ StyledPopup {
                 icon: "planner_review"
                 label: "CPU"
             }
-            Column {
-                spacing: 4
-                StyledPopupValueRow {
-                    icon: "bolt"
-                    label: Translation.tr("Load:")
-                    value: `${Math.round(ResourceUsage.cpuUsage * 100)}%`
-                }
-            }
+            CpuPopupRows {}
         }
         GpuPopupSection {}
     }
