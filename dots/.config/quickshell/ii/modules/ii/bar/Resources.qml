@@ -45,6 +45,7 @@ MouseArea {
             warningThreshold: Config.options.bar.resources.cpuWarningThreshold
         }
 
+        GpuResource {}
     }
 
     ResourcesPopup {

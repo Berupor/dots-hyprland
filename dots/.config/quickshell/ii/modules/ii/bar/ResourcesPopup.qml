@@ -90,5 +90,6 @@ StyledPopup {
                 }
             }
         }
+        GpuPopupSection {}
     }
 }
