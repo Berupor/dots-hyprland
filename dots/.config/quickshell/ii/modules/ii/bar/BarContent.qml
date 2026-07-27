@@ -16,6 +16,9 @@ Item { // Bar content region
     property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
     readonly property int centerSideModuleWidth: (useShortenedForm == 2) ? Appearance.sizes.barCenterSideModuleWidthHellaShortened : (useShortenedForm == 1) ? Appearance.sizes.barCenterSideModuleWidthShortened : Appearance.sizes.barCenterSideModuleWidth
+    // Both center-side modules keep the same width so the workspaces group stays centered,
+    // growing past the configured one when the content no longer fits
+    readonly property real centerSideModuleActualWidth: Math.max(root.centerSideModuleWidth, leftCenterGroup.contentImplicitWidth, rightCenterGroupContent.contentImplicitWidth)
 
     component VerticalBarSeparator: Rectangle {
         Layout.topMargin: Appearance.sizes.baseBarHeight / 3
@@ -111,7 +114,7 @@ Item { // Bar content region
         BarGroup {
             id: leftCenterGroup
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: root.centerSideModuleWidth
+            implicitWidth: root.centerSideModuleActualWidth
 
             Resources {
                 alwaysShowAllResources: root.useShortenedForm === 2
@@ -157,7 +160,7 @@ Item { // Bar content region
         MouseArea {
             id: rightCenterGroup
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: root.centerSideModuleWidth
+            implicitWidth: root.centerSideModuleActualWidth
             implicitHeight: rightCenterGroupContent.implicitHeight
 
             onPressed: {
