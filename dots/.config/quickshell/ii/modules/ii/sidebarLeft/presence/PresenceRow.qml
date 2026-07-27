@@ -16,6 +16,49 @@ Rectangle {
     readonly property bool offline: root.account?.offline ?? true
     readonly property var primary: root.account?.primary ?? null
     readonly property bool nowPlaying: !root.offline && !!root.primary?.spotify_status
+    readonly property bool activelyPlaying: root.nowPlaying && root.primary?.spotify_status === "playing"
+
+    property real _nowMs: Date.now()
+
+    Timer {
+        interval: 250
+        running: root.activelyPlaying
+        repeat: true
+        onTriggered: root._nowMs = Date.now()
+    }
+
+    // Server positions are whole seconds and arrive a beat late, so run off our own clock and
+    // only re-anchor on a seek, a track change or a play/pause - not on every sync.
+    property real _anchorMs: Date.now()
+    property real _anchorPos: 0
+    property string _anchorStatus: ""
+    property string _anchorTrack: ""
+
+    function projectedPosition(nowMs: real): real {
+        let pos = root._anchorPos;
+        if (root._anchorStatus === "playing")
+            pos += (nowMs - root._anchorMs) / 1000;
+        const length = root.primary?.spotify_length ?? 0;
+        if (length > 0)
+            pos = Math.min(pos, length);
+        return Math.max(0, pos);
+    }
+
+    onPrimaryChanged: {
+        const p = root.primary;
+        const rawPos = p?.spotify_position ?? 0;
+        const status = p?.spotify_status ?? "";
+        const track = p?.spotify_display ?? p?.spotify_track ?? "";
+        if (status === root._anchorStatus && track === root._anchorTrack && Math.abs(rawPos - root.projectedPosition(Date.now())) <= 2)
+            return;
+        root._anchorMs = Date.now();
+        root._nowMs = root._anchorMs;
+        root._anchorPos = rawPos;
+        root._anchorStatus = status;
+        root._anchorTrack = track;
+    }
+
+    readonly property real interpolatedPosition: root.primary?.spotify_status ? root.projectedPosition(root._nowMs) : 0
 
     Layout.fillWidth: true
     implicitHeight: content.implicitHeight + 24
@@ -211,13 +254,13 @@ Rectangle {
                         wavy: root.primary?.spotify_status === "playing"
                         highlightColor: Appearance.colors.colPrimary
                         trackColor: Appearance.colors.colSecondaryContainer
-                        value: (root.primary?.spotify_length > 0) ? (root.primary.spotify_position / root.primary.spotify_length) : 0
+                        value: (root.primary?.spotify_length > 0) ? (root.interpolatedPosition / root.primary.spotify_length) : 0
                     }
 
                     StyledText {
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: Appearance.colors.colSubtext
-                        text: `${StringUtils.friendlyTimeForSeconds(root.primary?.spotify_position)} / ${StringUtils.friendlyTimeForSeconds(root.primary?.spotify_length)}`
+                        text: `${StringUtils.friendlyTimeForSeconds(root.interpolatedPosition)} / ${StringUtils.friendlyTimeForSeconds(root.primary?.spotify_length)}`
                     }
                 }
             }
