@@ -110,6 +110,8 @@ Item {
                                     id: nameText
                                     Layout.fillWidth: true
                                     elide: Text.ElideRight
+                                    wrapMode: root.single ? Text.Wrap : Text.NoWrap
+                                    maximumLineCount: root.single ? 2 : 1
                                     font.pixelSize: root.single ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
                                     color: Appearance.colors.colOnLayer2
                                     text: PeripheralBattery.nameFor(card.modelData)
