@@ -15,7 +15,7 @@ import QtQuick.Layouts
 MouseArea {
     id: root
 
-    property bool showAll: true
+    property bool showAll: Config.options.bar.peripheralBattery.showAll
     readonly property int circleSize: 20
     readonly property var shownDevices: {
         if (PeripheralBattery.count === 0)

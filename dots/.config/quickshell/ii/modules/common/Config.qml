@@ -241,6 +241,10 @@ Singleton {
                 property bool showBackground: true
                 property bool verbose: true
                 property bool vertical: false
+                property JsonObject peripheralBattery: JsonObject {
+                    property bool enable: false // Shown in the right sidebar by default
+                    property bool showAll: true // Otherwise only the emptiest device
+                }
                 property JsonObject resources: JsonObject {
                     property bool alwaysShowSwap: true
                     property bool alwaysShowCpu: true
@@ -522,6 +526,10 @@ Singleton {
                     property bool visualize: false
                     property bool clicklessCornerEnd: true
                     property int clicklessCornerVerticalOffset: 1
+                }
+
+                property JsonObject peripheralBattery: JsonObject {
+                    property bool enable: true
                 }
 
                 property JsonObject quickToggles: JsonObject {

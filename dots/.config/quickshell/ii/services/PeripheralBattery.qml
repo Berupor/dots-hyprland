@@ -14,9 +14,9 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property real lowThreshold: 0.20
+    readonly property real lowThreshold: Config.options.battery.low / 100
     // Hysteresis: clear the "already warned" mark well above the threshold
-    readonly property real clearThreshold: 0.25
+    readonly property real clearThreshold: root.lowThreshold + 0.05
 
     /**
      * Anything that doesn't power the machine itself. Keyed on powerSupply: false
@@ -113,6 +113,26 @@ Singleton {
         default:
             return Translation.tr("Unknown");
         }
+    }
+
+    function durationString(seconds: real): string {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return hours > 0 ? Translation.tr("%1 h %2 min").arg(hours).arg(minutes) : Translation.tr("%1 min").arg(minutes);
+    }
+
+    /** State and time left, both only when UPower knows them. Empty when it knows neither. */
+    function detailFor(dev): string {
+        if (!dev)
+            return "";
+        const parts = [];
+        if (dev.state !== UPowerDeviceState.Unknown)
+            parts.push(root.stateString(dev));
+        if (dev.timeToEmpty > 0)
+            parts.push(Translation.tr("%1 left").arg(root.durationString(dev.timeToEmpty)));
+        else if (dev.timeToFull > 0)
+            parts.push(Translation.tr("%1 until full").arg(root.durationString(dev.timeToFull)));
+        return parts.join(" · ");
     }
 
     function checkLow(): void {

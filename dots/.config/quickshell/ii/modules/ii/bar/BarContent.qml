@@ -183,7 +183,7 @@ Item { // Bar content region
                 }
 
                 PeripheralBatteryIndicator {
-                    visible: root.useShortenedForm < 2
+                    visible: (Config.options.bar.peripheralBattery.enable && root.useShortenedForm < 2)
                     Layout.alignment: Qt.AlignVCenter
                 }
 

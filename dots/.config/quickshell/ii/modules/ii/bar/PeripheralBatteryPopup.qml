@@ -13,12 +13,6 @@ import QtQuick.Layouts
 StyledPopup {
     id: root
 
-    function durationString(seconds: real): string {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        return hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
-    }
-
     Column {
         anchors.centerIn: parent
         spacing: 12
@@ -58,14 +52,14 @@ StyledPopup {
                         visible: deviceColumn.modelData.timeToEmpty > 0
                         icon: "schedule"
                         label: Translation.tr("Time left:")
-                        value: root.durationString(deviceColumn.modelData.timeToEmpty)
+                        value: PeripheralBattery.durationString(deviceColumn.modelData.timeToEmpty)
                     }
                     StyledPopupValueRow {
                         Layout.fillWidth: true
                         visible: deviceColumn.modelData.timeToFull > 0
                         icon: "schedule"
                         label: Translation.tr("Until full:")
-                        value: root.durationString(deviceColumn.modelData.timeToFull)
+                        value: PeripheralBattery.durationString(deviceColumn.modelData.timeToFull)
                     }
                 }
             }
