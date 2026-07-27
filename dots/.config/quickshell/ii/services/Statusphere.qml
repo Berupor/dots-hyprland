@@ -26,9 +26,8 @@ Singleton {
     property string lastError: ""
 
     // One entry per account_id: { id, name, role, offline, devices, primary }
-    readonly property var accounts: {
+    readonly property var accountsById: {
         const byId = {};
-        const order = [];
         for (const m of root.members) {
             const id = m.account_id || m.device_id || "";
             if (!id)
@@ -41,7 +40,6 @@ Singleton {
                     "offline": true,
                     "devices": []
                 };
-                order.push(id);
             }
             const acc = byId[id];
             if (m.account_name)
@@ -54,21 +52,31 @@ Singleton {
             acc.offline = false;
             acc.devices.push(m);
         }
-        const result = order.map(id => {
+        for (const id in byId) {
             const acc = byId[id];
             acc.primary = acc.devices.find(d => d.spotify_status) ?? acc.devices.slice().sort((a, b) => (b.last_seen ?? 0) - (a.last_seen ?? 0))[0] ?? null;
-            return acc;
-        });
-        result.sort((a, b) => {
-            if (a.offline !== b.offline)
-                return a.offline ? 1 : -1;
-            return root.nameFor(a).toLowerCase().localeCompare(root.nameFor(b).toLowerCase());
-        });
-        return result;
+        }
+        return byId;
     }
 
-    readonly property int memberCount: root.accounts.length
-    readonly property int onlineCount: root.accounts.filter(a => !a.offline).length
+    // Rows look themselves up in accountsById; reassigning this makes the Repeater rebuild
+    // every delegate, so only do it when the roster itself changes.
+    property var accountIds: []
+
+    onAccountsByIdChanged: {
+        const ids = Object.keys(root.accountsById).sort((a, b) => {
+            const x = root.accountsById[a];
+            const y = root.accountsById[b];
+            if (x.offline !== y.offline)
+                return x.offline ? 1 : -1;
+            return root.nameFor(x).toLowerCase().localeCompare(root.nameFor(y).toLowerCase());
+        });
+        if (ids.length !== root.accountIds.length || ids.some((id, i) => id !== root.accountIds[i]))
+            root.accountIds = ids;
+    }
+
+    readonly property int memberCount: root.accountIds.length
+    readonly property int onlineCount: Object.values(root.accountsById).filter(a => !a.offline).length
 
     function nameFor(account): string {
         if (!account)

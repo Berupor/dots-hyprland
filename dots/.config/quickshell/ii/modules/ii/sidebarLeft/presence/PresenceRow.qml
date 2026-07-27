@@ -10,10 +10,11 @@ import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: root
-    required property var modelData
+    required property string modelData
 
-    readonly property bool offline: root.modelData.offline
-    readonly property var primary: root.modelData.primary
+    readonly property var account: Statusphere.accountsById[root.modelData] ?? null
+    readonly property bool offline: root.account?.offline ?? true
+    readonly property var primary: root.account?.primary ?? null
     readonly property bool nowPlaying: !root.offline && !!root.primary?.spotify_status
 
     Layout.fillWidth: true
@@ -52,7 +53,7 @@ Rectangle {
                     anchors.centerIn: parent
                     font.pixelSize: Appearance.font.pixelSize.large
                     color: root.offline ? Appearance.colors.colSubtext : Appearance.colors.colOnSecondaryContainer
-                    text: Statusphere.initialFor(root.modelData)
+                    text: Statusphere.initialFor(root.account)
                 }
 
                 Rectangle {
@@ -78,7 +79,7 @@ Rectangle {
                     elide: Text.ElideRight
                     textFormat: Text.PlainText
                     color: Appearance.colors.colOnLayer2
-                    text: Statusphere.nameFor(root.modelData)
+                    text: Statusphere.nameFor(root.account)
                 }
 
                 StyledText {
@@ -88,13 +89,13 @@ Rectangle {
                     textFormat: Text.PlainText
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: Appearance.colors.colSubtext
-                    text: root.offline ? Translation.tr("Offline") : Statusphere.statusFor(root.modelData)
+                    text: root.offline ? Translation.tr("Offline") : Statusphere.statusFor(root.account)
                 }
             }
 
             Rectangle {
                 id: weatherChip
-                readonly property string weatherText: Statusphere.weatherFor(root.modelData)
+                readonly property string weatherText: Statusphere.weatherFor(root.account)
                 visible: !root.offline && weatherText !== ""
                 Layout.alignment: Qt.AlignVCenter
                 radius: Appearance.rounding.full
@@ -116,7 +117,7 @@ Rectangle {
                 visible: !root.offline && !root.nowPlaying
                 iconSize: Appearance.font.pixelSize.larger
                 color: Appearance.colors.colOnLayer2
-                text: Statusphere.iconFor(root.modelData)
+                text: Statusphere.iconFor(root.account)
             }
         }
 
@@ -162,9 +163,9 @@ Rectangle {
                 MouseArea {
                     id: artHover
                     anchors.fill: parent
-                    hoverEnabled: Statusphere.canSync(root.modelData)
+                    hoverEnabled: Statusphere.canSync(root.account)
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Statusphere.syncSpotify(root.modelData)
+                    onClicked: Statusphere.syncSpotify(root.account)
 
                     Rectangle {
                         visible: artHover.containsMouse
@@ -198,7 +199,7 @@ Rectangle {
                     textFormat: Text.PlainText
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: Appearance.colors.colOnLayer2
-                    text: Statusphere.nowPlayingFor(root.modelData)
+                    text: Statusphere.nowPlayingFor(root.account)
                 }
 
                 RowLayout {
@@ -235,7 +236,7 @@ Rectangle {
         StyledToolTip {
             extraVisibleCondition: false
             alternativeVisibleCondition: root.showDetails
-            text: Statusphere.detailFor(root.modelData)
+            text: Statusphere.detailFor(root.account)
         }
     }
 }

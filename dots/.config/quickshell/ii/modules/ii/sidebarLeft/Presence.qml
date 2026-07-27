@@ -12,7 +12,7 @@ Item {
     id: root
 
     PagePlaceholder {
-        shown: Statusphere.accounts.length === 0
+        shown: Statusphere.accountIds.length === 0
         icon: "groups"
         shape: MaterialShape.Shape.Ghostish
         descriptionHorizontalAlignment: Text.AlignHCenter
@@ -25,7 +25,7 @@ Item {
             margins: 4
         }
         spacing: 6
-        visible: Statusphere.accounts.length > 0
+        visible: Statusphere.accountIds.length > 0
 
         StyledText {
             Layout.leftMargin: 6
@@ -47,7 +47,7 @@ Item {
                 spacing: 6
 
                 Repeater {
-                    model: Statusphere.accounts
+                    model: Statusphere.accountIds
                     delegate: PresenceRow {}
                 }
             }
