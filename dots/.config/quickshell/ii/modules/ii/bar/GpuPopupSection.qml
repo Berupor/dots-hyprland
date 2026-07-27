@@ -10,7 +10,7 @@ import QtQuick.Layouts
 Column {
     id: root
 
-    visible: GpuStatus.available
+    visible: GpuStatus.available && Config.options.bar.resources.showGpu
     anchors.top: parent.top
     spacing: 8
 

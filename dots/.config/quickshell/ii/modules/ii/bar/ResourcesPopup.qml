@@ -17,6 +17,7 @@ StyledPopup {
         spacing: 12
 
         Column {
+            visible: Config.options.bar.resources.showMemory
             anchors.top: parent.top
             spacing: 8
 
@@ -45,7 +46,7 @@ StyledPopup {
         }
 
         Column {
-            visible: ResourceUsage.swapTotal > 0
+            visible: Config.options.bar.resources.showSwap && ResourceUsage.swapTotal > 0
             anchors.top: parent.top
             spacing: 8
 
@@ -74,6 +75,7 @@ StyledPopup {
         }
 
         Column {
+            visible: Config.options.bar.resources.showCpu
             anchors.top: parent.top
             spacing: 8
 

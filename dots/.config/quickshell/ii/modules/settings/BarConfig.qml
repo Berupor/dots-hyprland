@@ -48,6 +48,134 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "monitoring"
+        title: Translation.tr("Resources")
+
+        ConfigRow {
+            ContentSubsection {
+                title: Translation.tr("Shown")
+                Layout.fillWidth: true
+
+                ConfigSwitch {
+                    buttonIcon: "memory"
+                    text: Translation.tr("RAM")
+                    checked: Config.options.bar.resources.showMemory
+                    onCheckedChanged: {
+                        Config.options.bar.resources.showMemory = checked;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "swap_horiz"
+                    text: Translation.tr("Swap")
+                    checked: Config.options.bar.resources.showSwap
+                    onCheckedChanged: {
+                        Config.options.bar.resources.showSwap = checked;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "planner_review"
+                    text: Translation.tr("CPU")
+                    checked: Config.options.bar.resources.showCpu
+                    onCheckedChanged: {
+                        Config.options.bar.resources.showCpu = checked;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "deployed_code"
+                    text: Translation.tr("GPU")
+                    checked: Config.options.bar.resources.showGpu
+                    onCheckedChanged: {
+                        Config.options.bar.resources.showGpu = checked;
+                    }
+                    StyledToolTip {
+                        text: GpuStatus.available ? Translation.tr("Load, VRAM and temperature") : Translation.tr("No supported GPU found")
+                    }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Keep visible while media plays")
+                Layout.fillWidth: true
+
+                ConfigSwitch {
+                    buttonIcon: "swap_horiz"
+                    text: Translation.tr("Swap")
+                    enabled: Config.options.bar.resources.showSwap
+                    checked: Config.options.bar.resources.alwaysShowSwap
+                    onCheckedChanged: {
+                        Config.options.bar.resources.alwaysShowSwap = checked;
+                    }
+                }
+
+                ConfigSwitch {
+                    buttonIcon: "planner_review"
+                    text: Translation.tr("CPU")
+                    enabled: Config.options.bar.resources.showCpu
+                    checked: Config.options.bar.resources.alwaysShowCpu
+                    onCheckedChanged: {
+                        Config.options.bar.resources.alwaysShowCpu = checked;
+                    }
+                }
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Warning thresholds")
+
+            ConfigSpinBox {
+                icon: "memory"
+                text: Translation.tr("RAM used (%)")
+                value: Config.options.bar.resources.memoryWarningThreshold
+                from: 1
+                to: 100
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.bar.resources.memoryWarningThreshold = value;
+                }
+            }
+
+            ConfigSpinBox {
+                icon: "swap_horiz"
+                text: Translation.tr("Swap used (%)")
+                value: Config.options.bar.resources.swapWarningThreshold
+                from: 1
+                to: 100
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.bar.resources.swapWarningThreshold = value;
+                }
+            }
+
+            ConfigSpinBox {
+                icon: "planner_review"
+                text: Translation.tr("CPU load (%)")
+                value: Config.options.bar.resources.cpuWarningThreshold
+                from: 1
+                to: 100
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.bar.resources.cpuWarningThreshold = value;
+                }
+            }
+
+            ConfigSpinBox {
+                icon: "thermostat"
+                text: Translation.tr("GPU temperature (°C)")
+                value: Config.options.bar.resources.gpuHotTemp
+                from: 40
+                to: 120
+                stepSize: 5
+                onValueChanged: {
+                    Config.options.bar.resources.gpuHotTemp = value;
+                }
+            }
+        }
+    }
+
+    ContentSection {
         icon: "spoke"
         title: Translation.tr("Positioning")
 

@@ -87,7 +87,7 @@ Singleton {
 
     Timer {
         interval: Config.options?.resources?.updateInterval ?? 3000
-        running: root.available
+        running: root.available && (Config.options?.bar?.resources?.showGpu ?? true)
         repeat: true
         triggeredOnStart: true
         onTriggered: root.refresh()

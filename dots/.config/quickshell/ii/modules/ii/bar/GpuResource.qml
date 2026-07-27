@@ -9,13 +9,10 @@ import QtQuick.Layouts
 Resource {
     id: root
 
-    // Warn on heat, not on load: 100% while rendering is normal
-    property int hotTemp: 95
-
     // A cube reads as 3d/graphics; developer_board and memory_alt read as a ram chip
     iconName: "deployed_code"
     percentage: GpuStatus.usage
-    shown: GpuStatus.available
-    warning: GpuStatus.temp >= root.hotTemp
+    shown: GpuStatus.available && Config.options.bar.resources.showGpu
+    warning: GpuStatus.temp >= Config.options.bar.resources.gpuHotTemp
     Layout.leftMargin: root.shown ? 6 : 0
 }
