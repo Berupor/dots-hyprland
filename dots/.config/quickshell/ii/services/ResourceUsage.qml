@@ -81,7 +81,8 @@ Singleton {
             if (cpuLine) {
                 const stats = cpuLine.slice(1).map(Number)
                 const total = stats.reduce((a, b) => a + b, 0)
-                const idle = stats[3]
+                // Cpu executes nothing while waiting on I/O, so iowait is not busy
+                const idle = stats[3] + stats[4]
 
                 if (previousCpuStats) {
                     const totalDiff = total - previousCpuStats.total
