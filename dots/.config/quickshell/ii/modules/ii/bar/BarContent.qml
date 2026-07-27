@@ -16,9 +16,9 @@ Item { // Bar content region
     property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
     property real useShortenedForm: (Appearance.sizes.barHellaShortenScreenWidthThreshold >= screen?.width) ? 2 : (Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0
     readonly property int centerSideModuleWidth: (useShortenedForm == 2) ? Appearance.sizes.barCenterSideModuleWidthHellaShortened : (useShortenedForm == 1) ? Appearance.sizes.barCenterSideModuleWidthShortened : Appearance.sizes.barCenterSideModuleWidth
-    // Both center-side modules keep the same width so the workspaces group stays centered,
-    // growing past the configured one when the content no longer fits
-    readonly property real centerSideModuleActualWidth: Math.max(root.centerSideModuleWidth, leftCenterGroup.contentImplicitWidth, rightCenterGroupContent.contentImplicitWidth)
+    // The right group hugs its content instead of matching the left one, so no spare width
+    // piles up next to the clock. The workspaces stay centered via middleSection's offset.
+    readonly property real centerSideModuleOffset: (rightCenterGroup.implicitWidth - leftCenterGroup.implicitWidth) / 2
 
     component VerticalBarSeparator: Rectangle {
         Layout.topMargin: Appearance.sizes.baseBarHeight / 3
@@ -108,13 +108,14 @@ Item { // Bar content region
             top: parent.top
             bottom: parent.bottom
             horizontalCenter: parent.horizontalCenter
+            horizontalCenterOffset: root.centerSideModuleOffset
         }
         spacing: 4
 
         BarGroup {
             id: leftCenterGroup
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: root.centerSideModuleActualWidth
+            implicitWidth: root.centerSideModuleWidth
 
             Resources {
                 alwaysShowAllResources: root.useShortenedForm === 2
@@ -124,6 +125,8 @@ Item { // Bar content region
             Media {
                 visible: root.useShortenedForm < 2
                 Layout.fillWidth: true
+                Layout.leftMargin: Appearance.sizes.barCenterModuleMargin
+                Layout.rightMargin: Appearance.sizes.barCenterModuleMargin
             }
         }
 
@@ -160,7 +163,7 @@ Item { // Bar content region
         MouseArea {
             id: rightCenterGroup
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: root.centerSideModuleActualWidth
+            implicitWidth: rightCenterGroupContent.contentImplicitWidth
             implicitHeight: rightCenterGroupContent.implicitHeight
 
             onPressed: {
@@ -174,7 +177,8 @@ Item { // Bar content region
                 ClockWidget {
                     showDate: (Config.options.bar.verbose && root.useShortenedForm < 2)
                     Layout.alignment: Qt.AlignVCenter
-                    Layout.fillWidth: true
+                    Layout.leftMargin: Appearance.sizes.barCenterModuleMargin
+                    Layout.rightMargin: Appearance.sizes.barCenterModuleMargin
                 }
 
                 UtilButtons {
