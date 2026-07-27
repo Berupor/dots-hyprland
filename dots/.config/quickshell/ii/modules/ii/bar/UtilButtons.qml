@@ -20,6 +20,8 @@ Item {
         spacing: 4
         anchors.centerIn: parent
 
+        VpnButton {}
+
         Loader {
             active: Config.options.bar.utilButtons.showScreenSnip
             visible: Config.options.bar.utilButtons.showScreenSnip
