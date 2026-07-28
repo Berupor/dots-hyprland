@@ -16,6 +16,7 @@ Singleton {
     property bool binaryFound: false
     property bool registered: false
     property string selfAccountId: ""
+    property string selfDeviceId: ""
     readonly property bool available: root.binaryFound && root.registered
     readonly property bool enabled: Config.options.sidebar.statusphere.enable
     readonly property bool shouldRun: root.enabled && root.available
@@ -42,11 +43,11 @@ Singleton {
                 };
             }
             const acc = byId[id];
-            if (m.account_name)
-                acc.name = m.account_name;
             if (m._role)
                 acc.role = m._role;
             if (m._offline) {
+                if (m.account_name)
+                    acc.name = m.account_name;
                 continue;
             }
             acc.offline = false;
@@ -54,9 +55,61 @@ Singleton {
         }
         for (const id in byId) {
             const acc = byId[id];
-            acc.primary = acc.devices.find(d => d.spotify_status) ?? acc.devices.slice().sort((a, b) => (b.last_seen ?? 0) - (a.last_seen ?? 0))[0] ?? null;
+            const newest = acc.devices.reduce((max, d) => Math.max(max, d.last_seen ?? 0), 0);
+            acc.devices.sort((a, b) => root.compareDevices(a, b, newest));
+            acc.primary = acc.devices[0] ?? null;
+            // Each device publishes its own copy of the account name and they go stale apart,
+            // so read it off one fixed device instead of whichever the cli listed last.
+            acc.name = root.labelDevice(acc)?.account_name || acc.devices.find(d => d.account_name)?.account_name || acc.name;
         }
         return byId;
+    }
+
+    // The cli emits devices in random order, so rank them. Live devices differ by a jittery
+    // second of last_seen, so freshness only counts once one falls this far behind the newest.
+    readonly property int staleGap: 45
+
+    function deviceRank(device): int {
+        if (device.spotify_status === "playing" && !root.stalled(device))
+            return 0;
+        if (device.spotify_status)
+            return 1;
+        return 2;
+    }
+
+    // A client that keeps saying "playing" while its position sits still lost the Spotify Connect
+    // session to another device and never noticed, so watch the position advance per device.
+    readonly property int stallTimeout: 8000
+    property var progressByDevice: ({})
+
+    function noteProgress(members): void {
+        const now = Date.now();
+        const next = {};
+        for (const m of members) {
+            const id = m.device_id;
+            if (!id || m.spotify_status !== "playing")
+                continue;
+            const key = root.trackKey(m);
+            const pos = m.spotify_position ?? 0;
+            const prev = root.progressByDevice[id];
+            next[id] = (prev && prev.key === key && pos <= prev.pos) ? prev : {
+                "key": key,
+                "pos": pos,
+                "at": now
+            };
+        }
+        root.progressByDevice = next;
+    }
+
+    function stalled(device): bool {
+        const seen = root.progressByDevice[device?.device_id];
+        return !!seen && Date.now() - seen.at > root.stallTimeout;
+    }
+
+    function compareDevices(a, b, newest): int {
+        const behind = d => (newest - (d.last_seen ?? 0) > root.staleGap) ? 1 : 0;
+        const own = d => d.device_id === root.selfDeviceId ? 0 : 1;
+        return root.deviceRank(a) - root.deviceRank(b) || behind(a) - behind(b) || own(a) - own(b) || (a.device_id ?? "").localeCompare(b.device_id ?? "");
     }
 
     // Rows look themselves up in accountsById; reassigning this makes the Repeater rebuild
@@ -78,14 +131,19 @@ Singleton {
     readonly property int memberCount: root.accountIds.length
     readonly property int onlineCount: Object.values(root.accountsById).filter(a => !a.offline).length
 
+    // A device name is the last resort for the account label, so pick one that stays put when
+    // playback hops between devices - primary follows the music, this must not.
+    function labelDevice(account): var {
+        const devices = account?.devices ?? [];
+        return devices.find(d => d.device_id === root.selfDeviceId) ?? devices.slice().sort((a, b) => (a.device_id ?? "").localeCompare(b.device_id ?? ""))[0] ?? null;
+    }
+
     function nameFor(account): string {
         if (!account)
             return "";
         if (account.name)
             return account.name;
-        if (account.primary?.device_name)
-            return account.primary.device_name;
-        return account.id.slice(0, 8);
+        return root.labelDevice(account)?.device_name || account.id.slice(0, 8);
     }
 
     function initialFor(account): string {
@@ -93,55 +151,71 @@ Singleton {
         return name ? name.charAt(0).toUpperCase() : "?";
     }
 
+    function trackKey(device): string {
+        return device?.spotify_uri || device?.spotify_display || `${device?.spotify_track ?? ""}/${device?.spotify_artist ?? ""}`;
+    }
+
+    // Spotify Connect syncs one session across an account's devices, so they report the same
+    // track - keep one device per distinct track, playing ones first (devices come sorted).
+    function musicDevices(account): var {
+        const playing = (account?.devices ?? []).filter(d => d.spotify_status);
+        const live = playing.filter(d => !root.stalled(d));
+        const seen = new Set();
+        return (live.length > 0 ? live : playing).filter(d => {
+            const key = root.trackKey(d);
+            if (seen.has(key))
+                return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
     function statusFor(account): string {
         if (!account || account.offline)
             return "";
+        const playing = root.musicDevices(account);
+        if (playing.length > 1)
+            return Translation.tr("Listening on %1 devices").arg(playing.length);
         const p = account.primary;
-        if (!p)
-            return Translation.tr("Online");
-        if (p.active_window)
+        if (p?.active_window)
             return p.active_window;
-        if (p.active_app)
+        if (p?.active_app)
             return p.active_app;
-        if (p.spotify_status)
+        if (p?.spotify_status)
             return "";
         return Translation.tr("Online");
     }
 
-    function nowPlayingFor(account): string {
-        const p = account?.primary;
-        if (!p?.spotify_status)
+    function deviceNameFor(device): string {
+        return device?.device_name || (device?.device_id ?? "").slice(0, 8);
+    }
+
+    function deviceStatusFor(device): string {
+        const what = device?.active_window || device?.active_app || Translation.tr("Online");
+        const name = root.deviceNameFor(device);
+        return name ? `${name} · ${what}` : what;
+    }
+
+    function trackFor(device): string {
+        if (!device?.spotify_status)
             return "";
-        return p.spotify_display || `${p.spotify_track ?? ""} — ${p.spotify_artist ?? ""}`;
+        return device.spotify_display || `${device.spotify_track ?? ""} — ${device.spotify_artist ?? ""}`;
     }
 
     function weatherFor(account): string {
         return account?.primary?.weather ?? "";
     }
 
-    function canSync(account): bool {
-        return !!account?.primary?.spotify_uri && account.id !== root.selfAccountId;
+    function canSync(device): bool {
+        return !!device?.spotify_uri && device.device_id !== root.selfDeviceId;
     }
 
     // Same mechanism as the TUI's sync action (client/internal/media/media.go): MPRIS OpenUri.
-    function syncSpotify(account): void {
-        const uri = account?.primary?.spotify_uri;
+    function syncSpotify(device): void {
+        const uri = device?.spotify_uri;
         if (!uri)
             return;
         Quickshell.execDetached(["dbus-send", "--session", "--type=method_call", "--dest=org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player.OpenUri", `string:${uri}`]);
-    }
-
-    function iconFor(account): string {
-        if (!account || account.offline)
-            return "person_off";
-        const p = account.primary;
-        if (p?.spotify_status === "playing")
-            return "music_note";
-        if (p?.spotify_status === "paused")
-            return "pause";
-        if (p?.active_app)
-            return "desktop_windows";
-        return "circle";
     }
 
     function detailFor(account): string {
@@ -159,8 +233,6 @@ Singleton {
             if (key !== "weather" && p[key])
                 parts.push(`${key}: ${p[key]}`);
         }
-        if (account.devices.length > 1)
-            parts.push(Translation.tr("%1 devices").arg(account.devices.length));
         return parts.join(" · ");
     }
 
@@ -180,6 +252,7 @@ Singleton {
             return;
         try {
             const data = JSON.parse(text);
+            root.noteProgress(data.members ?? []);
             root.members = data.members ?? [];
             root.live = true;
             root.retryDelay = root.retryMin;
@@ -206,9 +279,12 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    root.selfAccountId = JSON.parse(text).account_id ?? "";
+                    const config = JSON.parse(text);
+                    root.selfAccountId = config.account_id ?? "";
+                    root.selfDeviceId = config.device_id ?? "";
                 } catch (e) {
                     root.selfAccountId = "";
+                    root.selfDeviceId = "";
                 }
             }
         }
