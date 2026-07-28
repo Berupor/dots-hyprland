@@ -22,7 +22,8 @@ StyledImage {
         const md5Hash = Qt.md5(`file://${encodedUrlWithoutFileProtocol}`);
         return `${Directories.genericCache}/thumbnails/${thumbnailSizeName}/${md5Hash}.png`;
     }
-    source: thumbnailPath
+    property int _generation: 0
+    source: thumbnailPath.length > 0 ? `${thumbnailPath}#${_generation}` : ""
 
     asynchronous: true
     smooth: true
@@ -33,7 +34,7 @@ StyledImage {
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
     }
 
-    onSourceSizeChanged: {
+    onThumbnailPathChanged: {
         if (!root.generateThumbnail) return;
         thumbnailGeneration.running = false;
         thumbnailGeneration.running = true;
@@ -42,15 +43,14 @@ StyledImage {
         id: thumbnailGeneration
         command: {
             const maxSize = Images.thumbnailSizes[root.thumbnailSizeName];
-            return ["bash", "-c", 
-                `[ -f '${FileUtils.trimFileProtocol(root.thumbnailPath)}' ] && exit 0 || { magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '${FileUtils.trimFileProtocol(root.thumbnailPath)}' && exit 1; }`
+            const dest = FileUtils.trimFileProtocol(root.thumbnailPath);
+            return ["bash", "-c",
+                `[ -f '${dest}' ] && exit 0 || { mkdir -p "$(dirname '${dest}')" && magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '${dest}' && exit 1 || exit 2; }`
             ]
         }
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 1) { // Force reload if thumbnail had to be generated
-                root.source = "";
-                root.source = root.thumbnailPath; // Force reload
-            }
+            if (exitCode === 1) // Bust the cache without breaking the source binding
+                root._generation += 1;
         }
     }
 }
