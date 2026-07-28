@@ -23,6 +23,8 @@ Singleton {
 
     // Raw member maps from the last parsed line, flat and heterogeneous by design
     property var members: []
+    // Each account's current shared photo, if any: { account_id, path, created_at, expires_at }
+    property var photos: []
     property bool live: false
     property string lastError: ""
 
@@ -110,6 +112,37 @@ Singleton {
         const behind = d => (newest - (d.last_seen ?? 0) > root.staleGap) ? 1 : 0;
         const own = d => d.device_id === root.selfDeviceId ? 0 : 1;
         return root.deviceRank(a) - root.deviceRank(b) || behind(a) - behind(b) || own(a) - own(b) || (a.device_id ?? "").localeCompare(b.device_id ?? "");
+    }
+
+    // One entry per account_id with a live share: { account_id, path, created_at, expires_at }
+    readonly property var photosByAccountId: {
+        const byId = {};
+        for (const p of root.photos) {
+            if (p.account_id)
+                byId[p.account_id] = p;
+        }
+        return byId;
+    }
+
+    // Ticks so currentPhotoFor's expiry check re-evaluates between stdout lines,
+    // not just when the roster/photo list itself changes.
+    property real _now: Date.now()
+
+    Timer {
+        interval: 30000
+        running: root.shouldRun
+        repeat: true
+        onTriggered: root._now = Date.now()
+    }
+
+    function currentPhotoFor(account): var {
+        const p = root.photosByAccountId[account?.id];
+        if (!p)
+            return null;
+        const expiresAt = Date.parse(p.expires_at);
+        if (isNaN(expiresAt) || root._now >= expiresAt)
+            return null;
+        return p;
     }
 
     // Rows look themselves up in accountsById; reassigning this makes the Repeater rebuild
@@ -254,6 +287,7 @@ Singleton {
             const data = JSON.parse(text);
             root.noteProgress(data.members ?? []);
             root.members = data.members ?? [];
+            root.photos = data.photos ?? [];
             root.live = true;
             root.retryDelay = root.retryMin;
         } catch (e) {
@@ -338,6 +372,7 @@ Singleton {
         onExited: (exitCode, exitStatus) => {
             root.live = false;
             root.members = [];
+            root.photos = [];
             root.wantRunning = false;
             if (root.shouldRun) {
                 root.retryDelay = Math.min(root.retryMax, root.retryDelay * 2);

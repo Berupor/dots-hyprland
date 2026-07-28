@@ -162,6 +162,16 @@ Rectangle {
             stackedCount: root.playing.length - 1
         }
 
+        PresencePhoto {
+            id: photoCard
+            readonly property var currentPhoto: Statusphere.currentPhotoFor(root.account)
+
+            Layout.fillWidth: true
+            Layout.leftMargin: 52
+            visible: Config.options.sidebar.statusphere.photo.enable && photoCard.currentPhoto !== null && !root.expanded
+            photo: photoCard.currentPhoto
+        }
+
         ColumnLayout { // Expanded: the music once per track, then what each device is up to
             Layout.fillWidth: true
             Layout.leftMargin: 52

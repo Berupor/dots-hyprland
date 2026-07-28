@@ -539,6 +539,9 @@ Singleton {
 
                 property JsonObject statusphere: JsonObject {
                     property bool enable: true
+                    property JsonObject photo: JsonObject {
+                        property bool enable: true
+                    }
                 }
 
                 property JsonObject quickToggles: JsonObject {

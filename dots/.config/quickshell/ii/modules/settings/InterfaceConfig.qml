@@ -511,6 +511,18 @@ ContentPage {
             }
         }
 
+        ConfigSwitch {
+            buttonIcon: "photo_camera"
+            text: Translation.tr('Friends\' shared photos')
+            checked: Config.options.sidebar.statusphere.photo.enable
+            onCheckedChanged: {
+                Config.options.sidebar.statusphere.photo.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Shows a room member's current shared photo below their row.\nShared with: statusphere post-photo <path>")
+            }
+        }
+
         ContentSubsection {
             title: Translation.tr("Quick toggles")
             
