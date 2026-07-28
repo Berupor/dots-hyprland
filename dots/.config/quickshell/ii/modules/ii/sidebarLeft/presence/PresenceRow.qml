@@ -257,10 +257,30 @@ Rectangle {
                         value: (root.primary?.spotify_length > 0) ? (root.interpolatedPosition / root.primary.spotify_length) : 0
                     }
 
-                    StyledText {
-                        font.pixelSize: Appearance.font.pixelSize.small
-                        color: Appearance.colors.colSubtext
-                        text: `${StringUtils.friendlyTimeForSeconds(root.interpolatedPosition)} / ${StringUtils.friendlyTimeForSeconds(root.primary?.spotify_length)}`
+                    Row { // Digits in equal cells, else the bar resizes on every tick
+                        Layout.alignment: Qt.AlignVCenter
+
+                        TextMetrics {
+                            id: digitCell
+                            text: "0123456789" // Cell is the average digit, so spacing stays close to natural
+                            font.family: Appearance.font.family.main
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.variableAxes: Appearance.font.variableAxes.main
+                        }
+
+                        Repeater {
+                            model: `${StringUtils.friendlyTimeForSeconds(root.interpolatedPosition)} / ${StringUtils.friendlyTimeForSeconds(root.primary?.spotify_length)}`.split("")
+
+                            delegate: StyledText {
+                                required property string modelData
+                                shouldUseNumberFont: false
+                                width: /\d/.test(modelData) ? digitCell.width / 10 : implicitWidth
+                                horizontalAlignment: Text.AlignHCenter
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                color: Appearance.colors.colSubtext
+                                text: modelData
+                            }
+                        }
                     }
                 }
             }
