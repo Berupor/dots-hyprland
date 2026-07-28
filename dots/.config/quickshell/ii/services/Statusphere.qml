@@ -231,6 +231,24 @@ Singleton {
         onTriggered: root.wantRunning = true
     }
 
+    // A heartbeat gap much bigger than its interval means the system was asleep - the feed's
+    // connection is likely stale even if it hasn't noticed, so force a reconnect.
+    readonly property int heartbeatInterval: 20000
+    readonly property int suspendGap: 60000
+    property real _lastHeartbeat: 0
+
+    Timer {
+        interval: root.heartbeatInterval
+        running: root.shouldRun
+        repeat: true
+        onTriggered: {
+            const now = Date.now();
+            if (root._lastHeartbeat && now - root._lastHeartbeat > root.suspendGap)
+                root.wantRunning = false;
+            root._lastHeartbeat = now;
+        }
+    }
+
     Process {
         id: feed
         running: root.shouldRun && root.wantRunning
