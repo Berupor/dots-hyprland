@@ -19,6 +19,7 @@ Rectangle {
         id: image
         anchors.fill: parent
         sourcePath: root.photo?.path ?? ""
+        thumbnailSizeName: "x-large" // The default sizes itself off sourceSize, which is 0 before the first load
         fillMode: Image.PreserveAspectCrop
 
         layer.enabled: true
