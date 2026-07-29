@@ -16,7 +16,7 @@ StyledImage {
     required property string sourcePath
     property string thumbnailSizeName: Images.thumbnailSizeNameForDimensions(sourceSize.width, sourceSize.height)
     property string thumbnailPath: {
-        if (sourcePath.length == 0) return;
+        if (sourcePath.length == 0) return "";
         const resolvedUrlWithoutFileProtocol = FileUtils.trimFileProtocol(`${Qt.resolvedUrl(sourcePath)}`);
         const encodedUrlWithoutFileProtocol = resolvedUrlWithoutFileProtocol.split("/").map(part => encodeURIComponent(part)).join("/");
         const md5Hash = Qt.md5(`file://${encodedUrlWithoutFileProtocol}`);
@@ -35,22 +35,40 @@ StyledImage {
     }
 
     onThumbnailPathChanged: {
-        if (!root.generateThumbnail) return;
+        root._retries = 0;
+        root.regenerate();
+    }
+
+    property int _retries: 0
+    readonly property int maxRetries: 5
+
+    // Built here, not as a command binding: that binding may still hold the previous path when
+    // this runs, which sends magick at the old destination and quietly generates nothing.
+    function regenerate(): void {
+        if (!root.generateThumbnail || root.thumbnailPath.length === 0) return;
+        const maxSize = Images.thumbnailSizes[root.thumbnailSizeName];
+        const dest = FileUtils.trimFileProtocol(root.thumbnailPath);
         thumbnailGeneration.running = false;
+        thumbnailGeneration.command = ["bash", "-c",
+            `[ -f '${dest}' ] && exit 0 || { mkdir -p "$(dirname '${dest}')" && magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '${dest}' && exit 1 || exit 2; }`
+        ];
         thumbnailGeneration.running = true;
     }
+
     Process {
         id: thumbnailGeneration
-        command: {
-            const maxSize = Images.thumbnailSizes[root.thumbnailSizeName];
-            const dest = FileUtils.trimFileProtocol(root.thumbnailPath);
-            return ["bash", "-c",
-                `[ -f '${dest}' ] && exit 0 || { mkdir -p "$(dirname '${dest}')" && magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '${dest}' && exit 1 || exit 2; }`
-            ]
-        }
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 1) // Bust the cache without breaking the source binding
+            if (exitCode === 1) { // Bust the cache without breaking the source binding
                 root._generation += 1;
+            } else if (exitCode === 2 && root._retries < root.maxRetries) { // Source may not be on disk yet
+                root._retries += 1;
+                retryTimer.restart();
+            }
         }
+    }
+    Timer {
+        id: retryTimer
+        interval: 1000 * root._retries
+        onTriggered: root.regenerate()
     }
 }
