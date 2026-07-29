@@ -203,6 +203,15 @@ Singleton {
                             property string text: ""
                         }
                     }
+                    property JsonObject presence: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 100
+                        property real y: 500
+                        property real width: 360
+                        property bool hideOffline: false
+                        property int maxRows: 0 // 0 for everyone
+                    }
                     property JsonObject weather: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"

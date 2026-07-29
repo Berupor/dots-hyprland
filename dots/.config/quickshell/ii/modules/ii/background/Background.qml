@@ -16,6 +16,7 @@ import Quickshell.Hyprland
 
 import qs.modules.ii.background.widgets
 import qs.modules.ii.background.widgets.clock
+import qs.modules.ii.background.widgets.presence
 import qs.modules.ii.background.widgets.weather
 
 Variants {
@@ -257,6 +258,17 @@ Variants {
                 FadeLoader {
                     shown: Config.options.background.widgets.weather.enable
                     sourceComponent: WeatherWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: 1
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.presence.enable && Statusphere.available
+                    sourceComponent: PresenceWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
                         scaledScreenWidth: bgRoot.screen.width
