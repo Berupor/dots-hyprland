@@ -44,7 +44,7 @@ Item {
             ColumnLayout {
                 id: column
                 width: flickable.width
-                spacing: 6
+                spacing: 12
 
                 Repeater {
                     model: Statusphere.accountIds

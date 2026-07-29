@@ -14,6 +14,8 @@ Rectangle {
     readonly property bool offline: root.account?.offline ?? true
     readonly property var devices: root.account?.devices ?? []
     readonly property var playing: Statusphere.musicDevices(root.account)
+    readonly property var currentPhoto: Statusphere.currentPhotoFor(root.account)
+    readonly property bool hasPhoto: Config.options.sidebar.statusphere.photo.enable && root.currentPhoto !== null
     readonly property bool expandable: root.devices.length > 1
     property bool expanded: false
 
@@ -23,7 +25,7 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: content.implicitHeight + 24
     radius: Appearance.rounding.normal
-    color: Appearance.colors.colLayer2
+    color: Appearance.colors.colLayer1
     opacity: root.offline ? 0.6 : 1
 
     Behavior on implicitHeight {
@@ -59,7 +61,7 @@ Rectangle {
                 MaterialShape {
                     anchors.fill: parent
                     shape: MaterialShape.Shape.Circle
-                    color: root.offline ? Appearance.colors.colLayer1 : Appearance.colors.colSecondaryContainer
+                    color: root.offline ? Appearance.colors.colLayer2 : Appearance.colors.colSecondaryContainer
                 }
 
                 StyledText {
@@ -153,23 +155,27 @@ Rectangle {
             }
         }
 
-        PresenceMusic { // One art with the rest of the stack peeking out behind it
+        PresencePhoto {
             Layout.fillWidth: true
-            Layout.leftMargin: 52 // Lines up with the name above, past the avatar
+            Layout.topMargin: 8
+            visible: root.hasPhoto && !root.expanded
+            photo: root.currentPhoto
+        }
+
+        Rectangle { // Only needed between the photo and the compact music line below it
+            visible: root.hasPhoto && root.playing.length > 0 && !root.expanded
+            Layout.fillWidth: true
+            implicitHeight: 1
+            color: Appearance.colors.colOutlineVariant
+        }
+
+        PresenceMusic { // One art with the rest of the stack peeking out behind it, unless a photo already fills the space
+            Layout.fillWidth: true
             visible: root.playing.length > 0 && !root.expanded
+            compact: root.hasPhoto
             device: root.playing[0] ?? null
             stackedDevice: root.playing[1] ?? null
             stackedCount: root.playing.length - 1
-        }
-
-        PresencePhoto {
-            id: photoCard
-            readonly property var currentPhoto: Statusphere.currentPhotoFor(root.account)
-
-            Layout.fillWidth: true
-            Layout.leftMargin: 52
-            visible: Config.options.sidebar.statusphere.photo.enable && photoCard.currentPhoto !== null && !root.expanded
-            photo: photoCard.currentPhoto
         }
 
         ColumnLayout { // Expanded: the music once per track, then what each device is up to
