@@ -19,11 +19,11 @@ Rectangle {
     onCompactChanged: if (!root.compact)
         root._expanded = false
 
-    readonly property bool _showCompact: root.compact && !root._expanded
+    readonly property bool showingCompact: root.compact && !root._expanded
 
-    radius: root._showCompact ? 0 : Appearance.rounding.normal
-    color: root._showCompact ? "transparent" : Appearance.colors.colLayer2
-    implicitHeight: content.implicitHeight + (root._showCompact ? 0 : 24)
+    radius: root.showingCompact ? 0 : Appearance.rounding.normal
+    color: root.showingCompact ? "transparent" : Appearance.colors.colLayer2
+    implicitHeight: content.implicitHeight + (root.showingCompact ? 0 : 24)
 
     Behavior on implicitHeight {
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -73,7 +73,7 @@ Rectangle {
 
     MouseArea { // Tap the opened-up card to collapse it back to the compact line
         anchors.fill: content
-        enabled: root.compact && !root._showCompact
+        enabled: root.compact && !root.showingCompact
         cursorShape: Qt.PointingHandCursor
         onClicked: root._expanded = false
     }
@@ -84,12 +84,12 @@ Rectangle {
             left: parent.left
             right: parent.right
             verticalCenter: parent.verticalCenter
-            margins: root._showCompact ? 0 : 12
+            margins: root.showingCompact ? 0 : 12
         }
         spacing: 16
 
         Item {
-            visible: !root._showCompact
+            visible: !root.showingCompact
             Layout.alignment: Qt.AlignVCenter
             implicitWidth: art.width + (root.stackedCount > 0 ? 8 : 0)
             implicitHeight: art.height
@@ -169,28 +169,34 @@ Rectangle {
             }
         }
 
-        RowLayout { // Compact: title and a thin bar sharing one line, no art, no time
+        Item { // Compact: title and a thin bar sharing one line, no art, no time
             Layout.fillWidth: true
-            visible: root._showCompact
-            spacing: 8
+            visible: root.showingCompact
+            implicitHeight: compactLine.implicitHeight
 
-            StyledText {
-                Layout.fillWidth: true
-                elide: Text.ElideRight
-                textFormat: Text.PlainText
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colSubtext
-                text: Statusphere.trackFor(root.device)
-            }
+            RowLayout {
+                id: compactLine
+                anchors.fill: parent
+                spacing: 8
 
-            StyledProgressBar {
-                Layout.preferredWidth: 64
-                Layout.alignment: Qt.AlignVCenter
-                valueBarHeight: 3
-                wavy: root.device?.spotify_status === "playing"
-                highlightColor: Appearance.colors.colPrimary
-                trackColor: Appearance.colors.colSecondaryContainer
-                value: (root.length > 0) ? (root.interpolatedPosition / root.length) : 0
+                StyledText {
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                    textFormat: Text.PlainText
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: Appearance.colors.colSubtext
+                    text: Statusphere.trackFor(root.device)
+                }
+
+                StyledProgressBar {
+                    Layout.preferredWidth: 64
+                    Layout.alignment: Qt.AlignVCenter
+                    valueBarHeight: 3
+                    wavy: root.device?.spotify_status === "playing"
+                    highlightColor: Appearance.colors.colPrimary
+                    trackColor: Appearance.colors.colSecondaryContainer
+                    value: (root.length > 0) ? (root.interpolatedPosition / root.length) : 0
+                }
             }
 
             MouseArea {
@@ -202,7 +208,7 @@ Rectangle {
 
         ColumnLayout {
             Layout.fillWidth: true
-            visible: !root._showCompact
+            visible: !root.showingCompact
             spacing: 6
 
             StyledText {

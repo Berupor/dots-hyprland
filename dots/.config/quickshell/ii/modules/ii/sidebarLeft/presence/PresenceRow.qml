@@ -163,13 +163,14 @@ Rectangle {
         }
 
         Rectangle { // Only needed between the photo and the compact music line below it
-            visible: root.hasPhoto && root.playing.length > 0 && !root.expanded
+            visible: root.hasPhoto && music.visible && music.showingCompact
             Layout.fillWidth: true
             implicitHeight: 1
             color: Appearance.colors.colOutlineVariant
         }
 
         PresenceMusic { // One art with the rest of the stack peeking out behind it, unless a photo already fills the space
+            id: music
             Layout.fillWidth: true
             visible: root.playing.length > 0 && !root.expanded
             compact: root.hasPhoto
