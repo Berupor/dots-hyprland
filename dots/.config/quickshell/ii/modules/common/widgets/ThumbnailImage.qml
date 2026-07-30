@@ -23,7 +23,9 @@ StyledImage {
         return `${Directories.genericCache}/thumbnails/${thumbnailSizeName}/${md5Hash}.png`;
     }
     property int _generation: 0
-    source: thumbnailPath.length > 0 ? `${thumbnailPath}#${_generation}` : ""
+    // Set once the file is on disk, with a counter to bust Qt's cache: loading blind races the
+    // generator, and of two widgets sharing a thumbnail the one that doesn't generate it stays stuck.
+    source: ""
 
     asynchronous: true
     smooth: true
@@ -42,15 +44,28 @@ StyledImage {
     property int _retries: 0
     readonly property int maxRetries: 5
 
+    function show(): void {
+        root._generation += 1;
+        root.source = `${root.thumbnailPath}#${root._generation}`;
+    }
+
     // Built here, not as a command binding: that binding may still hold the previous path when
     // this runs, which sends magick at the old destination and quietly generates nothing.
     function regenerate(): void {
-        if (!root.generateThumbnail || root.thumbnailPath.length === 0) return;
+        if (root.thumbnailPath.length === 0) {
+            root.source = "";
+            return;
+        }
+        if (!root.generateThumbnail) {
+            root.show();
+            return;
+        }
         const maxSize = Images.thumbnailSizes[root.thumbnailSizeName];
         const dest = FileUtils.trimFileProtocol(root.thumbnailPath);
         thumbnailGeneration.running = false;
+        // Via a temp file: whoever catches a half-written png caches the decode error
         thumbnailGeneration.command = ["bash", "-c",
-            `[ -f '${dest}' ] && exit 0 || { mkdir -p "$(dirname '${dest}')" && magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '${dest}' && exit 1 || exit 2; }`
+            `[ -f '${dest}' ] || { mkdir -p "$(dirname '${dest}')" && magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} png:'${dest}.$$' && mv -f '${dest}.$$' '${dest}'; } || { rm -f '${dest}.$$'; exit 1; }`
         ];
         thumbnailGeneration.running = true;
     }
@@ -58,9 +73,11 @@ StyledImage {
     Process {
         id: thumbnailGeneration
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 1) { // Bust the cache without breaking the source binding
-                root._generation += 1;
-            } else if (exitCode === 2 && root._retries < root.maxRetries) { // Source may not be on disk yet
+            if (exitStatus !== 0) // Killed by a path change, which started its own run
+                return;
+            if (exitCode === 0) {
+                root.show();
+            } else if (root._retries < root.maxRetries) { // Source may not be on disk yet
                 root._retries += 1;
                 retryTimer.restart();
             }
