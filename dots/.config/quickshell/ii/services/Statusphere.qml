@@ -5,7 +5,6 @@ pragma ComponentBehavior: Bound
 
 import qs.services
 import qs.modules.common
-import qs.modules.common.functions
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -251,22 +250,70 @@ Singleton {
         Quickshell.execDetached(["dbus-send", "--session", "--type=method_call", "--dest=org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player.OpenUri", `string:${uri}`]);
     }
 
-    function detailFor(account): string {
-        if (!account)
-            return "";
-        if (account.offline)
-            return Translation.tr("Offline");
-        const p = account.primary;
-        const parts = [];
-        if (p?.active_workspace)
-            parts.push(Translation.tr("Workspace %1").arg(p.active_workspace));
-        if (p?.last_seen)
-            parts.push(NotificationUtils.getFriendlyNotifTimeString(p.last_seen * 1000));
-        for (const key of (p?.custom_fields ?? [])) {
-            if (key !== "weather" && p[key])
-                parts.push(`${key}: ${p[key]}`);
+    // "mem" ships as "used/total" text (eg. "21155M/31663M"), not a percentage, so
+    // derive its bar fill from the raw MB totals the device sends alongside it.
+    function percentForField(key, raw, device): var {
+        const direct = raw.match(/^(\d+(?:\.\d+)?)\s*%$/);
+        if (direct)
+            return parseFloat(direct[1]);
+        if ((key === "mem" || key === "ram" || key === "memory") && device.memory_total_mb > 0)
+            return device.memory_used_mb / device.memory_total_mb * 100;
+        return null;
+    }
+
+    function iconForField(key): string {
+        switch (key) {
+        case "cpu":
+            return "planner_review";
+        case "mem":
+        case "ram":
+        case "memory":
+            return "memory";
+        case "disk":
+            return "storage";
+        case "gpu":
+            return "deployed_code";
+        default:
+            return "monitoring";
         }
-        return parts.join(" · ");
+    }
+
+    // Structured for the right-click detail card: percentage custom fields become
+    // { percent }, everything else (workspace, weather) stays text-only.
+    function detailFieldsFor(account): var {
+        if (!account || account.offline)
+            return [];
+        const p = account.primary;
+        const fields = [];
+        if (p?.active_workspace)
+            fields.push({
+                "key": "workspace",
+                "icon": "desktop_windows",
+                "label": Translation.tr("Workspace"),
+                "value": String(p.active_workspace),
+                "percent": null
+            });
+        if (root.weatherFor(account))
+            fields.push({
+                "key": "weather",
+                "icon": "sunny",
+                "label": Translation.tr("Weather"),
+                "value": root.weatherFor(account),
+                "percent": null
+            });
+        for (const key of (p?.custom_fields ?? [])) {
+            if (key === "weather" || !p[key])
+                continue;
+            const raw = String(p[key]);
+            fields.push({
+                "key": key,
+                "icon": root.iconForField(key),
+                "label": key,
+                "value": raw,
+                "percent": root.percentForField(key, raw, p)
+            });
+        }
+        return fields;
     }
 
     function placeholderText(): string {

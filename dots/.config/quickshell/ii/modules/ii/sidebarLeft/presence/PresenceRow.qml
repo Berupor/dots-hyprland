@@ -134,25 +134,6 @@ Rectangle {
                     }
                 }
             }
-
-            Rectangle {
-                id: weatherChip
-                readonly property string weatherText: Statusphere.weatherFor(root.account)
-                visible: !root.offline && weatherText !== ""
-                Layout.alignment: Qt.AlignVCenter
-                radius: Appearance.rounding.full
-                color: Appearance.colors.colLayer1
-                implicitWidth: weatherLabel.implicitWidth + 16
-                implicitHeight: weatherLabel.implicitHeight + 6
-
-                StyledText {
-                    id: weatherLabel
-                    anchors.centerIn: parent
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
-                    text: weatherChip.weatherText
-                }
-            }
         }
 
         PresencePhoto {
@@ -231,21 +212,20 @@ Rectangle {
                 }
             }
         }
+
+        PresenceDetailCard { // Right click: the noisy stuff (cpu/mem/disk, workspace, weather)
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+            visible: root.showDetails
+            account: root.account
+        }
     }
 
     property bool showDetails: false
 
-    MouseArea { // Hold right click for the noisy stuff (cpu/mem/disk, workspace, last seen)
+    MouseArea { // Right click toggles the details section above, growing the card in place
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
-        onPressed: root.showDetails = true
-        onReleased: root.showDetails = false
-        onCanceled: root.showDetails = false
-
-        StyledToolTip {
-            extraVisibleCondition: false
-            alternativeVisibleCondition: root.showDetails
-            text: Statusphere.detailFor(root.account)
-        }
+        onClicked: root.showDetails = !root.showDetails
     }
 }
