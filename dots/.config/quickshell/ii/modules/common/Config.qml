@@ -257,6 +257,9 @@ Singleton {
                 property JsonObject androidWebcam: JsonObject {
                     property bool enable: true // Hidden anyway while no phone is plugged in as a webcam
                 }
+                property JsonObject statusphere: JsonObject {
+                    property bool incognitoIndicator: true // Hidden anyway unless you're hiding
+                }
                 property JsonObject resources: JsonObject {
                     property bool showMemory: true
                     property bool showSwap: true
@@ -551,6 +554,9 @@ Singleton {
 
                 property JsonObject statusphere: JsonObject {
                     property bool enable: true
+                    property JsonObject incognito: JsonObject {
+                        property bool enable: true // Hold your own row to pick how long
+                    }
                     property JsonObject photo: JsonObject {
                         property bool enable: true
                         property bool share: true

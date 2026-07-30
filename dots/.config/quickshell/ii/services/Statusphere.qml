@@ -130,9 +130,91 @@ Singleton {
 
     Timer {
         interval: 30000
-        running: root.shouldRun
+        running: root.shouldRun || root.incognitoMode
         repeat: true
         onTriggered: root._now = Date.now()
+    }
+
+    // Incognito is the cli's own state, shared with its tui, so read the file instead
+    // of keeping a second copy of the truth here.
+    property bool incognitoMode: false
+    property bool incognitoAnnounce: true
+    property string incognitoNote: ""
+    property real incognitoUntil: 0
+    readonly property bool hiding: root.incognitoMode && (root.incognitoUntil === 0 || root._now < root.incognitoUntil)
+
+    FileView {
+        path: `${Directories.config}/statusphere/privacy.json`
+        printErrors: false // Missing until the first toggle, which is the normal state
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.readPrivacy(text())
+        onLoadFailed: root.readPrivacy("")
+    }
+
+    function readPrivacy(text: string): void {
+        try {
+            const privacy = JSON.parse(text);
+            const until = Date.parse(privacy.until ?? "");
+            root.incognitoMode = (privacy.mode ?? "normal") !== "normal";
+            root.incognitoAnnounce = privacy.announce !== false;
+            root.incognitoNote = privacy.note ?? "";
+            root.incognitoUntil = isNaN(until) ? 0 : until;
+        } catch (e) {
+            root.incognitoMode = false;
+            root.incognitoAnnounce = true;
+            root.incognitoNote = "";
+            root.incognitoUntil = 0;
+        }
+        root._now = Date.now();
+    }
+
+    function setIncognito(on: bool, minutes: int): void {
+        const arg = !on ? "off" : (minutes > 0 ? `${minutes}m` : "on");
+        incognitoProc.command = ["bash", "-c", `"$HOME/.local/bin/statusphere" --incognito ${arg}`];
+        incognitoProc.running = true;
+    }
+
+    Process {
+        id: incognitoProc
+    }
+
+    function incognitoLabel(): string {
+        if (!root.hiding)
+            return Translation.tr("Your room sees what you're up to");
+        if (root.incognitoNote)
+            return Translation.tr("Hidden · %1").arg(root.incognitoNote);
+        if (root.incognitoUntil > 0)
+            return Translation.tr("Hidden until %1").arg(Qt.formatTime(new Date(root.incognitoUntil), "HH:mm"));
+        return Translation.tr("Hidden from your room");
+    }
+
+    // A hidden card should still say something. The line is picked from the account id
+    // so it stays with the person instead of changing on every roster update.
+    readonly property var hiddenLines: [Translation.tr("off the radar"), Translation.tr("somewhere else"), Translation.tr("heads down"), Translation.tr("out of frame"), Translation.tr("keeping it quiet"), Translation.tr("doing something")]
+
+    function isSelf(account): bool {
+        return !!account?.id && account.id === root.selfAccountId;
+    }
+
+    // Your own row is the room's view of you, so it hides itself too - including when
+    // announce is off and the room is told nothing at all.
+    function hiddenFor(account): bool {
+        return account?.primary?._incognito === true || (root.hiding && root.isSelf(account));
+    }
+
+    function hiddenLineFor(account): string {
+        const note = account?.primary?._incognito_note ?? "";
+        if (note)
+            return note;
+        if (root.isSelf(account) && !root.incognitoAnnounce)
+            return Translation.tr("Nothing at all");
+        const id = account?.id ?? "";
+        let sum = 0;
+        for (let i = 0; i < id.length; i++) {
+            sum += id.charCodeAt(i);
+        }
+        return root.hiddenLines[sum % root.hiddenLines.length];
     }
 
     function currentPhotoFor(account): var {
@@ -268,6 +350,8 @@ Singleton {
     function statusFor(account): string {
         if (!account || account.offline)
             return "";
+        if (root.hiddenFor(account))
+            return root.hiddenLineFor(account);
         const playing = root.musicDevices(account);
         if (playing.length > 1)
             return Translation.tr("Listening on %1 devices").arg(playing.length);

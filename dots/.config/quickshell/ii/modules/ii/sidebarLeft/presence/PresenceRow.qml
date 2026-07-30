@@ -12,11 +12,14 @@ Rectangle {
 
     readonly property var account: Statusphere.accountsById[root.modelData] ?? null
     readonly property bool offline: root.account?.offline ?? true
+    readonly property bool hidden: Statusphere.hiddenFor(root.account)
+    readonly property bool isSelf: root.modelData === Statusphere.selfAccountId
+    readonly property bool canPick: root.isSelf && Statusphere.available && Config.options.sidebar.statusphere.incognito.enable
     readonly property var devices: root.account?.devices ?? []
     readonly property var playing: Statusphere.musicDevices(root.account)
     readonly property var currentPhoto: Statusphere.currentPhotoFor(root.account)
     readonly property bool hasPhoto: Config.options.sidebar.statusphere.photo.enable && root.currentPhoto !== null
-    readonly property bool canShare: root.modelData === Statusphere.selfAccountId && Statusphere.canShare
+    readonly property bool canShare: root.isSelf && Statusphere.canShare
     readonly property bool expandable: root.devices.length > 1
     property bool expanded: false
 
@@ -53,59 +56,71 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 12
 
-            Item {
+            PresenceAvatar {
                 id: avatar
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 40
-                implicitHeight: 40
-
-                MaterialShape {
-                    anchors.fill: parent
-                    shape: MaterialShape.Shape.Circle
-                    color: root.offline ? Appearance.colors.colLayer2 : Appearance.colors.colSecondaryContainer
+                account: root.account
+                offline: root.offline
+                hidden: root.hidden
+                interactive: root.canPick
+                onHoldStarted: picker.open = true
+                onHoldMoved: (x, y) => {
+                    const point = avatar.mapToItem(picker, x, y);
+                    picker.hoverAt(point.x, point.y);
                 }
-
-                StyledText {
-                    anchors.centerIn: parent
-                    font.pixelSize: Appearance.font.pixelSize.large
-                    color: root.offline ? Appearance.colors.colSubtext : Appearance.colors.colOnSecondaryContainer
-                    text: Statusphere.initialFor(root.account)
+                onHoldEnded: {
+                    picker.apply();
+                    picker.open = false;
+                    picker.hovered = -1;
                 }
-
-                Rectangle {
-                    width: 12
-                    height: 12
-                    radius: 6
-                    anchors {
-                        right: parent.right
-                        bottom: parent.bottom
-                    }
-                    color: root.offline ? Appearance.colors.colLayer2 : Appearance.colors.colPrimary
-                    border.width: 2
-                    border.color: Appearance.colors.colLayer2
-                }
+                onTapped: if (root.expandable)
+                    root.expanded = !root.expanded
             }
 
-            ColumnLayout {
+            Item { // Who they are, or the picker while you're holding your own row
                 Layout.fillWidth: true
-                spacing: 2
+                implicitHeight: Math.max(info.implicitHeight, picker.implicitHeight)
 
-                StyledText {
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                    textFormat: Text.PlainText
-                    color: Appearance.colors.colOnLayer2
-                    text: Statusphere.nameFor(root.account)
+                ColumnLayout {
+                    id: info
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
+                    spacing: 2
+                    opacity: picker.open ? 0 : 1
+
+                    Behavior on opacity {
+                        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        textFormat: Text.PlainText
+                        color: Appearance.colors.colOnLayer2
+                        text: Statusphere.nameFor(root.account)
+                    }
+
+                    StyledText { // The blurred avatar already says they're hiding
+                        Layout.fillWidth: true
+                        visible: text.length > 0
+                        elide: Text.ElideRight
+                        textFormat: Text.PlainText
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        color: Appearance.colors.colSubtext
+                        text: root.offline ? Translation.tr("Offline") : Statusphere.statusFor(root.account)
+                    }
                 }
 
-                StyledText {
-                    Layout.fillWidth: true
-                    visible: text.length > 0
-                    elide: Text.ElideRight
-                    textFormat: Text.PlainText
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
-                    text: root.offline ? Translation.tr("Offline") : Statusphere.statusFor(root.account)
+                PresenceIncognitoPicker {
+                    id: picker
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
                 }
             }
 
