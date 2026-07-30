@@ -554,6 +554,8 @@ Singleton {
                     property JsonObject photo: JsonObject {
                         property bool enable: true
                         property bool share: true
+                        property int minHeight: 100
+                        property int maxHeight: 320
                     }
                 }
 

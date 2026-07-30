@@ -523,6 +523,32 @@ ContentPage {
             }
         }
 
+        ConfigSpinBox {
+            enabled: Config.options.sidebar.statusphere.photo.enable
+            icon: "compress"
+            text: Translation.tr("Min photo height")
+            value: Config.options.sidebar.statusphere.photo.minHeight
+            from: 60
+            to: 320
+            stepSize: 20
+            onValueChanged: {
+                Config.options.sidebar.statusphere.photo.minHeight = value;
+            }
+        }
+
+        ConfigSpinBox {
+            enabled: Config.options.sidebar.statusphere.photo.enable
+            icon: "expand"
+            text: Translation.tr("Max photo height")
+            value: Config.options.sidebar.statusphere.photo.maxHeight
+            from: 120
+            to: 640
+            stepSize: 20
+            onValueChanged: {
+                Config.options.sidebar.statusphere.photo.maxHeight = value;
+            }
+        }
+
         ConfigSwitch {
             buttonIcon: "add_a_photo"
             text: Translation.tr('Share photos yourself')

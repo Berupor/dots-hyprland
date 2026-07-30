@@ -11,16 +11,26 @@ Rectangle {
     id: root
     property var photo: null // { account_id, path, created_at, expires_at }
 
-    implicitHeight: 160
+    readonly property int minHeight: Config.options.sidebar.statusphere.photo.minHeight
+    readonly property int maxHeight: Config.options.sidebar.statusphere.photo.maxHeight
+    // Shared regions come in every shape, so the card follows the image instead of cropping it to a fixed strip
+    readonly property real naturalHeight: image.implicitHeight > 0 ? root.width * image.implicitHeight / image.implicitWidth : 0
+
+    implicitHeight: root.naturalHeight > 0 ? Math.round(Math.max(root.minHeight, Math.min(root.maxHeight, root.naturalHeight))) : root.minHeight
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
+
+    Behavior on implicitHeight {
+        animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+    }
 
     ThumbnailImage {
         id: image
         anchors.fill: parent
         sourcePath: root.photo?.path ?? ""
         thumbnailSizeName: "x-large" // The default sizes itself off sourceSize, which is 0 before the first load
-        fillMode: Image.PreserveAspectCrop
+        // Panoramas get letterboxed rather than gutted; anything taller is cropped to maxHeight
+        fillMode: root.naturalHeight > 0 && root.naturalHeight < root.minHeight ? Image.PreserveAspectFit : Image.PreserveAspectCrop
 
         layer.enabled: true
         layer.effect: OpacityMask {
