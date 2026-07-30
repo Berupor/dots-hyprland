@@ -258,7 +258,7 @@ Singleton {
                     property bool showMemory: true
                     property bool showSwap: true
                     property bool showCpu: true
-                    property bool showGpu: true
+                    property bool showGpu: false
                     property bool alwaysShowSwap: true // Otherwise hidden while media plays
                     property bool alwaysShowCpu: true
                     property int memoryWarningThreshold: 95
