@@ -519,7 +519,19 @@ ContentPage {
                 Config.options.sidebar.statusphere.photo.enable = checked;
             }
             StyledToolTip {
-                text: Translation.tr("Shows a room member's current shared photo below their row.\nShared with: statusphere post-photo <path>")
+                text: Translation.tr("Shows a room member's current shared photo below their row")
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "add_a_photo"
+            text: Translation.tr('Share photos yourself')
+            checked: Config.options.sidebar.statusphere.photo.share
+            onCheckedChanged: {
+                Config.options.sidebar.statusphere.photo.share = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Middle-click your own card for share actions.\nMiddle-drag in the region selector shares that region right away")
             }
         }
 

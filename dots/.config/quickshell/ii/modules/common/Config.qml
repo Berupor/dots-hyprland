@@ -553,6 +553,7 @@ Singleton {
                     property bool enable: true
                     property JsonObject photo: JsonObject {
                         property bool enable: true
+                        property bool share: true
                     }
                 }
 

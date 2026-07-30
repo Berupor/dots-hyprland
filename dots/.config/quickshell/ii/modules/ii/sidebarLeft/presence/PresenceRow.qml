@@ -16,6 +16,7 @@ Rectangle {
     readonly property var playing: Statusphere.musicDevices(root.account)
     readonly property var currentPhoto: Statusphere.currentPhotoFor(root.account)
     readonly property bool hasPhoto: Config.options.sidebar.statusphere.photo.enable && root.currentPhoto !== null
+    readonly property bool canShare: root.modelData === Statusphere.selfAccountId && Statusphere.canShare
     readonly property bool expandable: root.devices.length > 1
     property bool expanded: false
 
@@ -219,13 +220,31 @@ Rectangle {
             visible: root.showDetails
             account: root.account
         }
+
+        PresenceActions { // Middle click, own card only
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+            visible: root.showActions && root.canShare
+            photo: root.currentPhoto
+        }
     }
 
     property bool showDetails: false
+    property bool showActions: false
 
-    MouseArea { // Right click toggles the details section above, growing the card in place
+    onCanShareChanged: if (!root.canShare)
+        root.showActions = false
+
+    MouseArea { // Both toggle a section above, growing the card in place
         anchors.fill: parent
-        acceptedButtons: Qt.RightButton
-        onClicked: root.showDetails = !root.showDetails
+        acceptedButtons: Qt.RightButton | Qt.MiddleButton
+        onClicked: mouse => {
+            if (mouse.button === Qt.MiddleButton) {
+                if (root.canShare)
+                    root.showActions = !root.showActions;
+                return;
+            }
+            root.showDetails = !root.showDetails;
+        }
     }
 }

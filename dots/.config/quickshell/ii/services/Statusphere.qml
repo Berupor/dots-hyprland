@@ -5,6 +5,7 @@ pragma ComponentBehavior: Bound
 
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -142,6 +143,68 @@ Singleton {
         if (isNaN(expiresAt) || root._now >= expiresAt)
             return null;
         return p;
+    }
+
+    readonly property var selfAccount: root.accountsById[root.selfAccountId] ?? null
+    readonly property bool canShare: root.available && Config.options.sidebar.statusphere.photo.share
+
+    // Sharing runs its own cli invocation: --post-photo is a plain http post that touches
+    // no local state, so it's safe next to the feed process.
+    property bool posting: false
+    property string lastPostError: ""
+
+    // The server re-encodes to 1600px anyway, so shrink here too and stay far from the cli's 8MiB cap.
+    readonly property string resizeArgs: "-resize '1600x1600>'"
+    readonly property string postTempPath: `${Directories.screenshotTemp}/statusphere-post.png`
+
+    function postPhoto(path: string): void {
+        if (!path)
+            return;
+        root.startPost(`magick '${StringUtils.shellSingleQuoteEscape(path)}' ${root.resizeArgs} png:'${root.postTempPath}'`);
+    }
+
+    // Source is the region selector's throwaway screenshot, so it goes away with the crop.
+    function postRegion(sourcePath: string, x: real, y: real, width: real, height: real): void {
+        const source = StringUtils.shellSingleQuoteEscape(sourcePath);
+        const crop = `-crop ${Math.round(width)}x${Math.round(height)}+${Math.round(x)}+${Math.round(y)} +repage`;
+        root.startPost(`magick '${source}' ${crop} ${root.resizeArgs} png:'${root.postTempPath}' && rm -f '${source}'`);
+    }
+
+    function startPost(prepareCommand: string): void {
+        if (!root.canShare || root.posting)
+            return;
+        root.lastPostError = "";
+        postProc.command = ["bash", "-c", `mkdir -p '${Directories.screenshotTemp}' && ${prepareCommand} && ` //
+            + `"$HOME/.local/bin/statusphere" --post-photo '${root.postTempPath}'; ` //
+            + `status=$?; rm -f '${root.postTempPath}'; exit $status`];
+        root.posting = true;
+        postProc.running = true;
+    }
+
+    function notifyPost(body: string): void {
+        Quickshell.execDetached(["notify-send", Translation.tr("Statusphere"), body, "-a", "Shell"]);
+    }
+
+    Process {
+        id: postProc
+        property string reply: ""
+        stdout: StdioCollector {
+            onStreamFinished: postProc.reply = text.trim()
+        }
+        stderr: StdioCollector {
+            onStreamFinished: root.lastPostError = text.trim()
+        }
+        onExited: exitCode => {
+            root.posting = false;
+            if (exitCode === 0) {
+                // "Shared. Visible to your room until <time>"
+                root.notifyPost(postProc.reply || Translation.tr("Photo shared with your room"));
+                return;
+            }
+            if (!root.lastPostError)
+                root.lastPostError = Translation.tr("Could not share the photo");
+            root.notifyPost(root.lastPostError);
+        }
     }
 
     // Rows look themselves up in accountsById; reassigning this makes the Repeater rebuild
