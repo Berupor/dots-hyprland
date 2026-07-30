@@ -499,68 +499,6 @@ ContentPage {
             }
         }
 
-        ConfigSwitch {
-            buttonIcon: "groups"
-            text: Translation.tr('Room presence tab')
-            checked: Config.options.sidebar.statusphere.enable
-            onCheckedChanged: {
-                Config.options.sidebar.statusphere.enable = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Who's around in your statusphere room, in the left sidebar.\nNeeds the statusphere cli and a registered account")
-            }
-        }
-
-        ConfigSwitch {
-            buttonIcon: "photo_camera"
-            text: Translation.tr('Friends\' shared photos')
-            checked: Config.options.sidebar.statusphere.photo.enable
-            onCheckedChanged: {
-                Config.options.sidebar.statusphere.photo.enable = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Shows a room member's current shared photo below their row")
-            }
-        }
-
-        ConfigSpinBox {
-            enabled: Config.options.sidebar.statusphere.photo.enable
-            icon: "compress"
-            text: Translation.tr("Min photo height")
-            value: Config.options.sidebar.statusphere.photo.minHeight
-            from: 60
-            to: 320
-            stepSize: 20
-            onValueChanged: {
-                Config.options.sidebar.statusphere.photo.minHeight = value;
-            }
-        }
-
-        ConfigSpinBox {
-            enabled: Config.options.sidebar.statusphere.photo.enable
-            icon: "expand"
-            text: Translation.tr("Max photo height")
-            value: Config.options.sidebar.statusphere.photo.maxHeight
-            from: 120
-            to: 640
-            stepSize: 20
-            onValueChanged: {
-                Config.options.sidebar.statusphere.photo.maxHeight = value;
-            }
-        }
-
-        ConfigSwitch {
-            buttonIcon: "add_a_photo"
-            text: Translation.tr('Share photos yourself')
-            checked: Config.options.sidebar.statusphere.photo.share
-            onCheckedChanged: {
-                Config.options.sidebar.statusphere.photo.share = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Middle-click your own card for share actions.\nMiddle-drag in the region selector shares that region right away")
-            }
-        }
-
         ContentSubsection {
             title: Translation.tr("Quick toggles")
             
