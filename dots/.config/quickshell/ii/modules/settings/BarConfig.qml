@@ -48,6 +48,23 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "videocam"
+        title: Translation.tr("Android webcam")
+
+        ConfigSwitch {
+            buttonIcon: "check"
+            text: Translation.tr("Show in the bar")
+            checked: Config.options.bar.androidWebcam.enable
+            onCheckedChanged: {
+                Config.options.bar.androidWebcam.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Indicator for a phone plugged in as a USB webcam.\nHidden while no phone is attached")
+            }
+        }
+    }
+
+    ContentSection {
         icon: "monitoring"
         title: Translation.tr("Resources")
 

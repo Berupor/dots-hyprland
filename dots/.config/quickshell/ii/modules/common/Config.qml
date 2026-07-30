@@ -254,6 +254,9 @@ Singleton {
                     property bool enable: false // Shown in the right sidebar by default
                     property bool showAll: true // Otherwise only the emptiest device
                 }
+                property JsonObject androidWebcam: JsonObject {
+                    property bool enable: true // Hidden anyway while no phone is plugged in as a webcam
+                }
                 property JsonObject resources: JsonObject {
                     property bool showMemory: true
                     property bool showSwap: true
