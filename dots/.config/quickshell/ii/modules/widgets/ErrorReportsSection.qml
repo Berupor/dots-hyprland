@@ -32,17 +32,20 @@ ContentSection {
                 {
                     displayName: Translation.tr("Ask"),
                     icon: "contact_support",
-                    value: "ask"
+                    value: "ask",
+                    tooltip: Translation.tr("A notification per failure, with the report waiting for your answer")
                 },
                 {
                     displayName: Translation.tr("Send"),
                     icon: "send",
-                    value: "always"
+                    value: "always",
+                    tooltip: Translation.tr("Sends every failure without asking. Same widget and message goes out once per session")
                 },
                 {
                     displayName: Translation.tr("Never"),
                     icon: "block",
-                    value: "never"
+                    value: "never",
+                    tooltip: Translation.tr("Nothing leaves this machine; failures still land in the shell log")
                 }
             ]
         }

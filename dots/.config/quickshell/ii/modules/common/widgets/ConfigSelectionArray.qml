@@ -49,6 +49,11 @@ Flow {
             onClicked: {
                 root.selected(modelData.value);
             }
+
+            StyledToolTip {
+                text: paletteButton.modelData.tooltip ?? ""
+                extraVisibleCondition: text !== ""
+            }
         }
     }
 }
