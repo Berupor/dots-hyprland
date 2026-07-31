@@ -10,7 +10,7 @@ import QtQuick
 MouseArea {
     id: root
 
-    property bool shown: Statusphere.hiding && (WidgetCatalog.option("statusphere", "incognitoIndicator") ?? true)
+    property bool shown: Statusphere.hiding && Statusphere.opt("incognitoIndicator")
     visible: shown
     implicitWidth: visible ? icon.implicitWidth : 0
     implicitHeight: Appearance.sizes.barHeight

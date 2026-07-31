@@ -9,10 +9,13 @@ import Quickshell.Io
  *    files resolve `import qs.modules.widgets`, but not subdir modules)
  * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`
  * 3. Declare options with defaults, read them via WidgetCatalog.option(id, key), or
- *    optionValue(key) from the manifest itself. Never re-state a default elsewhere
+ *    optionValue(key) from the manifest itself. Never re-state a default elsewhere.
+ *    An option with a `label` is drawn by the card, one without is for a settingsPage
  * 4. List required binaries in `dependencies`
  * 5. `settingsPage` renders inside the widget's card on the Widgets page: group with
  *    ContentSubsection, ContentSection is the host's altitude
+ * 6. `backgroundWidget` builds on AbstractBackgroundWidget and stays loaded, so gate it
+ *    on its own option; `regionAction` exposes `available` and perform(path, x, y, w, h)
  * View slots take over a host screen instead of adding to it: `catalogView` replaces the
  * Widgets page (built-in one: WidgetCatalogView), `settingsView` the whole settings
  * window, titlebar included. Disable the widget to get the built-in view back.

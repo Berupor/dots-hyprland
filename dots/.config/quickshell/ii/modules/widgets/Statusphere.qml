@@ -21,6 +21,11 @@ Singleton {
     readonly property bool enabled: WidgetCatalog.isEnabled("statusphere")
     readonly property bool shouldRun: root.enabled && root.available
 
+    /// Widget option by manifest key, for every file of this widget
+    function opt(key: string): var {
+        return WidgetCatalog.option("statusphere", key);
+    }
+
     // Raw member maps from the last parsed line, flat and heterogeneous by design
     property var members: []
     // Each account's current shared photo, if any: { account_id, path, created_at, expires_at }
@@ -228,7 +233,7 @@ Singleton {
     }
 
     readonly property var selfAccount: root.accountsById[root.selfAccountId] ?? null
-    readonly property bool canShare: root.available && Config.options.sidebar.statusphere.photo.share
+    readonly property bool canShare: root.available && root.opt("photoShare")
 
     // Sharing runs its own cli invocation: --post-photo is a plain http post that touches
     // no local state, so it's safe next to the feed process.
@@ -360,7 +365,7 @@ Singleton {
     }
 
     Timer {
-        interval: Config.options.sidebar.statusphere.server.pingSeconds * 1000
+        interval: root.opt("serverPingSeconds") * 1000
         running: root.shouldRun && root.selfServerUrl !== "" && root.serverIds.length > 0
         repeat: true
         triggeredOnStart: true

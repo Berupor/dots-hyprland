@@ -17,11 +17,11 @@ Rectangle {
     readonly property bool isSelf: root.modelData === Statusphere.selfAccountId
     readonly property bool isServer: Statusphere.isServer(root.account)
     readonly property string health: root.offline ? "" : Statusphere.healthFor(root.account)
-    readonly property bool canPick: root.isSelf && Statusphere.available && Config.options.sidebar.statusphere.incognito.enable
+    readonly property bool canPick: root.isSelf && Statusphere.available && Statusphere.opt("incognito")
     readonly property var devices: root.account?.devices ?? []
     readonly property var playing: Statusphere.musicDevices(root.account)
     readonly property var currentPhoto: Statusphere.currentPhotoFor(root.account)
-    readonly property bool hasPhoto: Config.options.sidebar.statusphere.photo.enable && root.currentPhoto !== null
+    readonly property bool hasPhoto: Statusphere.opt("photos") && root.currentPhoto !== null
     readonly property bool canShare: root.isSelf && Statusphere.canShare
     readonly property bool expandable: root.devices.length > 1
     property bool expanded: false
@@ -241,7 +241,7 @@ Rectangle {
         PresenceDetailCard { // Right click: the noisy stuff (cpu/mem/disk, workspace, weather)
             Layout.fillWidth: true
             Layout.topMargin: 4
-            visible: root.showDetails || (root.isServer && !root.offline && Config.options.sidebar.statusphere.server.showMetrics)
+            visible: root.showDetails || (root.isServer && !root.offline && Statusphere.opt("serverMetrics"))
             account: root.account
         }
 

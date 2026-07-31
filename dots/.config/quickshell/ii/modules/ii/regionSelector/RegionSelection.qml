@@ -30,13 +30,26 @@ PanelWindow {
 
     // Modes
     // TODO: Ask: sidebar AI
-    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound, Share }
+    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound }
     enum SelectionMode { RectCorners, Circle }
     enum Phase { Select, Post }
     property var action: RegionSelection.SnipAction.Copy
     property var selectionMode: RegionSelection.SelectionMode.RectCorners
     property var phase: RegionSelection.Phase.Select
+    property string widgetAction: "" // Catalog widget claiming the region, empty for middle-drag
     signal dismiss()
+
+    /// Loaded action of a catalog widget, null when none takes the region
+    function widgetActionFor(name: string): var {
+        const manifest = WidgetCatalog.forSlot("regionAction").find(w => name === "" || w.slots.regionAction.name === name);
+        if (!manifest)
+            return null;
+        const component = Qt.createComponent(manifest.resolve(manifest.slots.regionAction.path));
+        const action = component.createObject(root); // Dies with the selector
+        if (!action)
+            ErrorReporter.report(manifest.widgetId, component.errorString());
+        return action?.available ? action : null;
+    }
 
     // Styles
     property string screenshotDir: Directories.screenshotTemp
@@ -276,11 +289,10 @@ PanelWindow {
         if (root.action === RegionSelection.SnipAction.Copy || root.action === RegionSelection.SnipAction.Edit) {
             root.action = root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.Edit : RegionSelection.SnipAction.Copy;
         }
-        if (root.mouseButton === Qt.MiddleButton && root.action === RegionSelection.SnipAction.Copy && Statusphere.canShare) {
-            root.action = RegionSelection.SnipAction.Share;
-        }
-        if (root.action === RegionSelection.SnipAction.Share) {
-            Statusphere.postRegion(root.screenshotPath, root.regionX * root.monitorScale, root.regionY * root.monitorScale, root.regionWidth * root.monitorScale, root.regionHeight * root.monitorScale);
+        const middleDrag = root.mouseButton === Qt.MiddleButton && root.action === RegionSelection.SnipAction.Copy;
+        const widgetAction = (root.widgetAction !== "" || middleDrag) ? root.widgetActionFor(root.widgetAction) : null;
+        if (widgetAction) {
+            widgetAction.perform(root.screenshotPath, root.regionX * root.monitorScale, root.regionY * root.monitorScale, root.regionWidth * root.monitorScale, root.regionHeight * root.monitorScale);
             root.dismiss();
             return;
         }

@@ -11,10 +11,12 @@ Scope {
 
     function dismiss() {
         GlobalStates.regionSelectorOpen = false
+        root.widgetAction = ""
     }
 
     property var action: RegionSelection.SnipAction.Copy
     property var selectionMode: RegionSelection.SelectionMode.RectCorners
+    property string widgetAction: ""
     
     Variants {
         model: Quickshell.screens
@@ -28,6 +30,7 @@ Scope {
                 onDismiss: root.dismiss()
                 action: root.action
                 selectionMode: root.selectionMode
+                widgetAction: root.widgetAction
             }
         }
     }
@@ -70,9 +73,10 @@ Scope {
         GlobalStates.regionSelectorOpen = true
     }
 
-    function share() {
-        root.action = RegionSelection.SnipAction.Share
+    function widget(name: string) { // Hands the region to a catalog widget
+        root.action = RegionSelection.SnipAction.Copy
         root.selectionMode = RegionSelection.SelectionMode.RectCorners
+        root.widgetAction = name
         GlobalStates.regionSelectorOpen = true
     }
 
@@ -82,8 +86,8 @@ Scope {
         function screenshot() {
             root.screenshot()
         }
-        function share() {
-            root.share()
+        function widget(name: string) {
+            root.widget(name)
         }
         function search() {
             root.search()

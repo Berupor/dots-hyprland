@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.widgets
@@ -13,13 +14,31 @@ AbstractBackgroundWidget {
     id: root
 
     configEntryName: "presence"
-
-    readonly property var shownAccountIds: {
-        const ids = Statusphere.accountIds.filter(id => !root.configEntry.hideOffline || !Statusphere.accountsById[id].offline);
-        return root.configEntry.maxRows > 0 ? ids.slice(0, root.configEntry.maxRows) : ids;
+    // Placement comes from the widget store, not from Config
+    configEntry: QtObject {
+        readonly property string placementStrategy: Statusphere.opt("wallpaperPlacement")
+        readonly property real x: Statusphere.opt("wallpaperX")
+        readonly property real y: Statusphere.opt("wallpaperY")
+    }
+    onReleased: { // Store writes only on drop, a binding back into the store would loop
+        root.targetX = root.x;
+        root.targetY = root.y;
+        WidgetsStore.setOption("statusphere", "wallpaperX", root.x);
+        WidgetsStore.setOption("statusphere", "wallpaperY", root.y);
     }
 
-    implicitWidth: root.configEntry.width
+    readonly property bool shown: Statusphere.opt("wallpaperCard") && Statusphere.available
+    readonly property var shownAccountIds: {
+        if (!root.shown)
+            return [];
+        const maxRows = Statusphere.opt("wallpaperMaxRows");
+        const ids = Statusphere.accountIds.filter(id => !Statusphere.opt("wallpaperHideOffline") || !Statusphere.accountsById[id].offline);
+        return maxRows > 0 ? ids.slice(0, maxRows) : ids;
+    }
+
+    // The host keeps the card loaded, so switching it off is opacity, not unloading
+    opacity: (root.shown && !(GlobalStates.screenLocked && !root.visibleWhenLocked)) ? 1 : 0
+    implicitWidth: Statusphere.opt("wallpaperWidth")
     implicitHeight: card.implicitHeight
 
     StyledDropShadow {

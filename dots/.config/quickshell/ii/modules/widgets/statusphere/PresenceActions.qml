@@ -105,7 +105,7 @@ ColumnLayout {
         failed: Statusphere.lastPostError.length > 0
         onClicked: {
             GlobalStates.sidebarLeftOpen = false;
-            Quickshell.execDetached(["qs", "-p", Quickshell.shellPath(""), "ipc", "call", "region", "share"]);
+            Quickshell.execDetached(["qs", "-p", Quickshell.shellPath(""), "ipc", "call", "region", "widget", "share"]);
         }
     }
 }

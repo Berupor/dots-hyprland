@@ -6,7 +6,6 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.widgets
-import qs.modules.widgets.statusphere
 import qs.modules.common.functions as CF
 import QtQuick
 import QtQuick.Layouts
@@ -267,14 +266,18 @@ Variants {
                     }
                 }
 
-                FadeLoader {
-                    shown: WidgetCatalog.isEnabled("statusphere") && Config.options.background.widgets.presence.enable && Statusphere.available
-                    sourceComponent: PresenceBackgroundWidget {
-                        screenWidth: bgRoot.screen.width
-                        screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width
-                        scaledScreenHeight: bgRoot.screen.height
-                        wallpaperScale: 1
+                Repeater { // Catalog widgets
+                    model: WidgetCatalog.forSlot("backgroundWidget")
+                    delegate: Loader {
+                        required property var modelData
+                        Component.onCompleted: setSource(modelData.resolve(modelData.slots.backgroundWidget), {
+                            "screenWidth": bgRoot.screen.width,
+                            "screenHeight": bgRoot.screen.height,
+                            "scaledScreenWidth": bgRoot.screen.width,
+                            "scaledScreenHeight": bgRoot.screen.height,
+                            "wallpaperScale": 1
+                        })
+                        onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
                     }
                 }
 

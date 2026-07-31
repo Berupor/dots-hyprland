@@ -12,7 +12,8 @@ Rectangle {
     id: root
     required property var manifest
     readonly property bool widgetEnabled: WidgetCatalog.isEnabled(manifest.widgetId)
-    readonly property bool hasBody: manifest.options.length > 0 || manifest.settingsPage !== "" || root.placements.length > 0
+    readonly property var drawnOptions: manifest.options.filter(o => o.label) // The rest are values for a settingsPage
+    readonly property bool hasBody: root.drawnOptions.length > 0 || manifest.settingsPage !== "" || root.placements.length > 0
     readonly property bool bodyShown: root.widgetEnabled && root.hasBody && root.expanded
     property bool expanded: false
 
@@ -21,6 +22,8 @@ Rectangle {
         "barIndicator": Translation.tr("Bar indicator"),
         "sidebarLeftTab": Translation.tr("Left sidebar"),
         "sidebarRightTab": Translation.tr("Right sidebar"),
+        "backgroundWidget": Translation.tr("Wallpaper"),
+        "regionAction": Translation.tr("Region selector"),
         "catalogView": Translation.tr("This page"),
         "settingsView": Translation.tr("Settings window")
     })
@@ -203,7 +206,7 @@ Rectangle {
                 }
 
                 Repeater {
-                    model: root.bodyShown ? root.manifest.options : []
+                    model: root.bodyShown ? root.drawnOptions : []
                     delegate: Loader {
                         id: optLoader
                         required property var modelData

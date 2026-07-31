@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.widgets
 import QtQuick
 import Qt5Compat.GraphicalEffects
 
@@ -11,8 +12,8 @@ Rectangle {
     id: root
     property var photo: null // { account_id, path, created_at, expires_at }
 
-    readonly property int minHeight: Config.options.sidebar.statusphere.photo.minHeight
-    readonly property int maxHeight: Config.options.sidebar.statusphere.photo.maxHeight
+    readonly property int minHeight: Statusphere.opt("photoMinHeight")
+    readonly property int maxHeight: Statusphere.opt("photoMaxHeight")
     // Shared regions come in every shape, so the card follows the image instead of cropping it to a fixed strip
     readonly property real naturalHeight: image.implicitHeight > 0 ? root.width * image.implicitHeight / image.implicitWidth : 0
 

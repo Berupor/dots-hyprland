@@ -9,6 +9,7 @@
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.ii.bar
+import qs.modules.ii.background.widgets
 import qs.modules.widgets
 import qs.services
 import QtQuick
@@ -38,7 +39,10 @@ ShellRoot {
         return root.manifest.resolve(entry.path ?? entry);
     }
 
-    onSourceChanged: if (source) console.log(`[harness] source ${source}`)
+    onSourceChanged: if (source) {
+        console.log(`[harness] source ${source}`)
+        loader.setSource(source, root.props) // Not a source binding: required properties must exist at creation
+    }
 
     Timer {
         running: true
@@ -69,7 +73,6 @@ ShellRoot {
                 id: loader
                 width: root.itemW > 0 ? root.itemW : (item?.implicitWidth > 0 ? item.implicitWidth : win.width)
                 height: root.itemH > 0 ? root.itemH : (item?.implicitHeight > 0 ? item.implicitHeight : win.height)
-                source: root.source
 
                 onLoaded: {
                     for (const key in root.props)
