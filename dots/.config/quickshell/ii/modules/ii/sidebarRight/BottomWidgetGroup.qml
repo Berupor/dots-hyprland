@@ -5,6 +5,7 @@ import qs.services
 import qs.modules.ii.sidebarRight.calendar
 import qs.modules.ii.sidebarRight.todo
 import qs.modules.ii.sidebarRight.pomodoro
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Layouts
 
@@ -17,36 +18,32 @@ Rectangle {
     property int selectedTab: Math.min(Persistent.states.sidebar.bottomGroup.tab, root.tabs.length - 1)
     property int previousIndex: -1
     property bool collapsed: Persistent.states.sidebar.bottomGroup.collapsed
-    property var tabs: {
-        const result = [
-            {
-                "type": "calendar",
-                "name": Translation.tr("Calendar"),
-                "icon": "calendar_month",
-                "widget": "calendar/CalendarWidget.qml"
-            },
-            {
-                "type": "todo",
-                "name": Translation.tr("To Do"),
-                "icon": "done_outline",
-                "widget": "todo/TodoWidget.qml"
-            },
-            {
-                "type": "timer",
-                "name": Translation.tr("Timer"),
-                "icon": "schedule",
-                "widget": "pomodoro/PomodoroWidget.qml"
-            },
-        ];
-        if (Config.options.sidebar.peripheralBattery.enable)
-            result.push({
-                "type": "peripheralBattery",
-                "name": Translation.tr("Devices"),
-                "icon": "battery_android_full",
-                "widget": "peripheralBattery/PeripheralBatteryWidget.qml"
-            });
-        return result;
-    }
+    property var tabs: [
+        {
+            "type": "calendar",
+            "name": Translation.tr("Calendar"),
+            "icon": "calendar_month",
+            "widget": "calendar/CalendarWidget.qml"
+        },
+        {
+            "type": "todo",
+            "name": Translation.tr("To Do"),
+            "icon": "done_outline",
+            "widget": "todo/TodoWidget.qml"
+        },
+        {
+            "type": "timer",
+            "name": Translation.tr("Timer"),
+            "icon": "schedule",
+            "widget": "pomodoro/PomodoroWidget.qml"
+        },
+        ...WidgetCatalog.forSlot("sidebarRightTab").map(w => ({
+            "type": w.widgetId,
+            "name": w.slots.sidebarRightTab.name,
+            "icon": w.slots.sidebarRightTab.icon,
+            "widget": w.resolve(w.slots.sidebarRightTab.path)
+        }))
+    ]
 
     Behavior on implicitHeight {
         NumberAnimation {
