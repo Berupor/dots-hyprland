@@ -76,8 +76,14 @@ disabled, and `satty` is the only new default (screenshot annotation, switch it 
 settings if you don't have it).
 
 `./setup install-files` sits in between: all the config files, no packages. Take that
-one if your dots are older than the branch's merge base, since the shell alone would
-end up newer than everything around it. Clashing files go to `~/ii-original-dots-backup`.
+one instead of the rsync if your dots predate this branch's merge base, 2026-07-27,
+since the shell alone would end up newer than everything around it:
+
+```sh
+git -C /path/to/your/dots-hyprland log -1 --date=short --format='%ad %s'
+```
+
+Clashing files go to `~/ii-original-dots-backup`.
 
 ## The way back
 
