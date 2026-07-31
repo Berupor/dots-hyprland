@@ -7,8 +7,7 @@ import qs.modules.widgets
 
 ColumnLayout {
 
-    ContentSection {
-        icon: "visibility_off"
+    ContentSubsection {
         title: Translation.tr("Incognito")
 
         ConfigSwitch {
@@ -36,8 +35,7 @@ ColumnLayout {
         }
     }
 
-    ContentSection {
-        icon: "dns"
+    ContentSubsection {
         title: Translation.tr("Servers")
 
         ConfigSwitch {
@@ -68,8 +66,7 @@ ColumnLayout {
         }
     }
 
-    ContentSection {
-        icon: "photo_camera"
+    ContentSubsection {
         title: Translation.tr("Photos")
 
         ConfigSwitch {
@@ -123,8 +120,7 @@ ColumnLayout {
         }
     }
 
-    ContentSection {
-        icon: "texture"
+    ContentSubsection {
         title: Translation.tr("Wallpaper card")
 
         ConfigRow {
