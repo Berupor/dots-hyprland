@@ -8,6 +8,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.widgets
 
 Item { // Bar content region
     id: root
@@ -184,6 +185,16 @@ Item { // Bar content region
                 UtilButtons {
                     visible: (Config.options.bar.verbose && root.useShortenedForm === 0)
                     Layout.alignment: Qt.AlignVCenter
+                }
+
+                Repeater { // Catalog widgets
+                    model: WidgetCatalog.forSlot("barIndicator")
+                    delegate: Loader {
+                        required property var modelData
+                        Layout.alignment: Qt.AlignVCenter
+                        source: modelData.resolve(modelData.slots.barIndicator)
+                        visible: (item?.shown ?? true) && root.useShortenedForm < 2
+                    }
                 }
 
                 PeripheralBatteryIndicator {

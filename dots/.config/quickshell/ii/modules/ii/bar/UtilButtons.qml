@@ -1,6 +1,7 @@
 import qs
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -21,6 +22,15 @@ Item {
         anchors.centerIn: parent
 
         VpnButton {}
+
+        Repeater { // Catalog widgets
+            model: WidgetCatalog.forSlot("barUtilButton")
+            delegate: Loader {
+                required property var modelData
+                Layout.alignment: Qt.AlignVCenter
+                source: modelData.resolve(modelData.slots.barUtilButton)
+            }
+        }
 
         Loader {
             active: Config.options.bar.utilButtons.showScreenSnip
