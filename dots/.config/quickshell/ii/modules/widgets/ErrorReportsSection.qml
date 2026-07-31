@@ -17,15 +17,8 @@ ContentSection {
     icon: "bug_report"
     title: Translation.tr("Error reports")
 
-    NoticeBox {
-        Layout.fillWidth: true
-        materialIcon: "policy"
-        text: Translation.tr("A failing widget can send its error along with the last 100 log lines. Logs carry window titles and paths, so nothing is sent until a target is set here.")
-    }
-
     ColumnLayout {
         Layout.fillWidth: true
-        Layout.topMargin: 4
         spacing: 4
 
         ContentSubsectionLabel {
@@ -80,6 +73,15 @@ ContentSection {
                 interval: 400 // Every keystroke would rewrite widgets.json
                 onTriggered: WidgetsStore.setKey("errorReportsTarget", targetField.text.trim())
             }
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            Layout.leftMargin: 2
+            text: Translation.tr("The error goes out with the last 100 log lines, window titles and paths included. Empty means nothing is ever sent.")
+            font.pixelSize: Appearance.font.pixelSize.smaller
+            color: Appearance.colors.colSubtext
+            wrapMode: Text.WordWrap
         }
 
         RippleButtonWithIcon {
