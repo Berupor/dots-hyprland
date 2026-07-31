@@ -16,6 +16,7 @@ Rectangle {
     clip: true
     implicitHeight: collapsed ? collapsedBottomWidgetGroupRow.implicitHeight : 350
     property int selectedTab: Math.min(Persistent.states.sidebar.bottomGroup.tab, root.tabs.length - 1)
+    onTabsChanged: root.selectedTab = Math.min(root.selectedTab, root.tabs.length - 1) // A widget tab may leave
     property int previousIndex: -1
     property bool collapsed: Persistent.states.sidebar.bottomGroup.collapsed
     property var tabs: [
