@@ -54,6 +54,38 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "dns"
+        title: Translation.tr("Servers")
+
+        ConfigSwitch {
+            buttonIcon: "monitoring"
+            text: Translation.tr('Metrics on the card')
+            checked: Config.options.sidebar.statusphere.server.showMetrics
+            onCheckedChanged: {
+                Config.options.sidebar.statusphere.server.showMetrics = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("A machine has no window title, so its card shows cpu, memory, disk and load instead.\nThe verdict next to the name comes from that machine's own ~/.config/statusphere/health.json")
+            }
+        }
+
+        ConfigSpinBox {
+            icon: "network_ping"
+            text: Translation.tr("Reachability check (seconds)")
+            value: Config.options.sidebar.statusphere.server.pingSeconds
+            from: 15
+            to: 600
+            stepSize: 15
+            onValueChanged: {
+                Config.options.sidebar.statusphere.server.pingSeconds = value;
+            }
+            StyledToolTip {
+                text: Translation.tr("A server card shows what its machine reports: cpu, memory, disk, load.\nThe agent can't report its own death, so the server is asked directly too")
+            }
+        }
+    }
+
+    ContentSection {
         icon: "photo_camera"
         title: Translation.tr("Photos")
 

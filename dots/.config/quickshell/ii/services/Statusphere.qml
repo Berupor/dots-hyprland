@@ -308,6 +308,65 @@ Singleton {
     readonly property int memberCount: root.accountIds.length
     readonly property int onlineCount: Object.values(root.accountsById).filter(a => !a.offline).length
 
+    // Machines, not people: a server card is read for its metrics. The kind sticks
+    // per account so an offline server stays a server instead of turning into a face.
+    property var kindById: ({})
+
+    function noteKinds(members): void {
+        const kinds = Object.assign({}, root.kindById);
+        let changed = false;
+        for (const m of members) {
+            const id = m.account_id ?? "";
+            if (id && m._kind && kinds[id] !== m._kind) {
+                kinds[id] = m._kind;
+                changed = true;
+            }
+        }
+        if (changed)
+            root.kindById = kinds;
+    }
+
+    function isServer(account): bool {
+        return (account?.primary?._kind ?? root.kindById[account?.id ?? ""] ?? "") === "server";
+    }
+
+    // The verdict is the machine's own, from ~/.config/statusphere/health.json there.
+    function healthFor(account): string {
+        return account?.primary?._health ?? "";
+    }
+
+    function healthNoteFor(account): string {
+        return account?.primary?._health_note ?? "";
+    }
+
+    readonly property var serverIds: root.accountIds.filter(id => root.isServer(root.accountsById[id]))
+
+    // A silent agent and a dead machine look the same from here, so say which one it is.
+    function offlineLineFor(account): string {
+        if (!root.isServer(account))
+            return Translation.tr("Offline");
+        return root.serverReachable ? Translation.tr("Not reporting") : Translation.tr("Host unreachable");
+    }
+
+    // The agent runs on the box it reports on, so it cannot report its own death.
+    // Asking the server directly is what tells a dead host from a dead feed.
+    property string selfServerUrl: ""
+    property bool serverReachable: true
+
+    Process {
+        id: healthProc
+        command: ["curl", "-sfm", "5", `${root.selfServerUrl}/health`]
+        onExited: exitCode => root.serverReachable = (exitCode === 0)
+    }
+
+    Timer {
+        interval: Config.options.sidebar.statusphere.server.pingSeconds * 1000
+        running: root.shouldRun && root.selfServerUrl !== "" && root.serverIds.length > 0
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: healthProc.running = true
+    }
+
     // A device name is the last resort for the account label, so pick one that stays put when
     // playback hops between devices - primary follows the music, this must not.
     function labelDevice(account): var {
@@ -352,6 +411,8 @@ Singleton {
             return "";
         if (root.hiddenFor(account))
             return root.hiddenLineFor(account);
+        if (root.isServer(account))
+            return root.healthNoteFor(account) || Translation.tr("All good");
         const playing = root.musicDevices(account);
         if (playing.length > 1)
             return Translation.tr("Listening on %1 devices").arg(playing.length);
@@ -425,13 +486,72 @@ Singleton {
         }
     }
 
-    // Structured for the right-click detail card: percentage custom fields become
-    // { percent }, everything else (workspace, weather) stays text-only.
+    function formatUptime(hours): string {
+        if (hours < 1)
+            return Translation.tr("%1m").arg(Math.round(hours * 60));
+        if (hours < 48)
+            return Translation.tr("%1h").arg(Math.round(hours));
+        return Translation.tr("%1d").arg(Math.round(hours / 24));
+    }
+
+    // Metrics the cli collects itself, so custom.json does not have to shell out
+    // for them. A custom field of the same name loses to these.
+    readonly property var nativeFieldKeys: ["cpu", "mem", "ram", "memory", "disk"]
+
+    function systemFieldsFor(device): var {
+        const fields = [];
+        if (device?.cpu_percent !== undefined)
+            fields.push({
+                "key": "cpu",
+                "icon": "planner_review",
+                "label": Translation.tr("CPU"),
+                "value": `${Math.round(device.cpu_percent)}%`,
+                "percent": device.cpu_percent
+            });
+        if (device?.memory_total_mb > 0) {
+            const percent = device.memory_used_mb / device.memory_total_mb * 100;
+            fields.push({
+                "key": "mem",
+                "icon": "memory",
+                "label": Translation.tr("Memory"),
+                "value": `${(device.memory_used_mb / 1024).toFixed(1)}/${(device.memory_total_mb / 1024).toFixed(1)}G`,
+                "percent": percent
+            });
+        }
+        if (device?.disk_used_percent !== undefined)
+            fields.push({
+                "key": "disk",
+                "icon": "storage",
+                "label": device.disk_free_gb !== undefined ? Translation.tr("Disk · %1G free").arg(Math.round(device.disk_free_gb)) : Translation.tr("Disk"),
+                "value": `${Math.round(device.disk_used_percent)}%`,
+                "percent": device.disk_used_percent
+            });
+        if (device?.load_avg_1m !== undefined)
+            fields.push({
+                "key": "load",
+                "icon": "speed",
+                "label": Translation.tr("Load"),
+                "value": device.cpu_count > 0 ? `${device.load_avg_1m.toFixed(2)} / ${device.cpu_count}` : device.load_avg_1m.toFixed(2),
+                "percent": null
+            });
+        if (device?.uptime_hours !== undefined)
+            fields.push({
+                "key": "uptime",
+                "icon": "schedule",
+                "label": Translation.tr("Uptime"),
+                "value": root.formatUptime(device.uptime_hours),
+                "percent": null
+            });
+        return fields;
+    }
+
+    // Structured for the right-click detail card: percentage fields become
+    // { percent }, everything else (workspace, weather, uptime) stays text-only.
     function detailFieldsFor(account): var {
         if (!account || account.offline)
             return [];
         const p = account.primary;
-        const fields = [];
+        const fields = root.systemFieldsFor(p);
         if (p?.active_workspace)
             fields.push({
                 "key": "workspace",
@@ -449,7 +569,7 @@ Singleton {
                 "percent": null
             });
         for (const key of (p?.custom_fields ?? [])) {
-            if (key === "weather" || !p[key])
+            if (key === "weather" || !p[key] || root.nativeFieldKeys.includes(key))
                 continue;
             const raw = String(p[key]);
             fields.push({
@@ -480,6 +600,7 @@ Singleton {
         try {
             const data = JSON.parse(text);
             root.noteProgress(data.members ?? []);
+            root.noteKinds(data.members ?? []);
             root.members = data.members ?? [];
             root.photos = data.photos ?? [];
             root.live = true;
@@ -510,9 +631,11 @@ Singleton {
                     const config = JSON.parse(text);
                     root.selfAccountId = config.account_id ?? "";
                     root.selfDeviceId = config.device_id ?? "";
+                    root.selfServerUrl = (config.server_url ?? "").replace(/\/+$/, "");
                 } catch (e) {
                     root.selfAccountId = "";
                     root.selfDeviceId = "";
+                    root.selfServerUrl = "";
                 }
             }
         }

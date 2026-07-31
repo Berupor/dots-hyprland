@@ -557,6 +557,10 @@ Singleton {
                     property JsonObject incognito: JsonObject {
                         property bool enable: true // Hold your own row to pick how long
                     }
+                    property JsonObject server: JsonObject {
+                        property bool showMetrics: true // Machines carry no window title, so show the numbers instead
+                        property int pingSeconds: 60 // An agent can't report its own death, so ask the server too
+                    }
                     property JsonObject photo: JsonObject {
                         property bool enable: true
                         property bool share: true

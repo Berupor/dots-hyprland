@@ -14,6 +14,8 @@ Rectangle {
     readonly property bool offline: root.account?.offline ?? true
     readonly property bool hidden: Statusphere.hiddenFor(root.account)
     readonly property bool isSelf: root.modelData === Statusphere.selfAccountId
+    readonly property bool isServer: Statusphere.isServer(root.account)
+    readonly property string health: root.offline ? "" : Statusphere.healthFor(root.account)
     readonly property bool canPick: root.isSelf && Statusphere.available && Config.options.sidebar.statusphere.incognito.enable
     readonly property var devices: root.account?.devices ?? []
     readonly property var playing: Statusphere.musicDevices(root.account)
@@ -109,8 +111,14 @@ Rectangle {
                         elide: Text.ElideRight
                         textFormat: Text.PlainText
                         font.pixelSize: Appearance.font.pixelSize.smaller
-                        color: Appearance.colors.colSubtext
-                        text: root.offline ? Translation.tr("Offline") : Statusphere.statusFor(root.account)
+                        color: {
+                            if (root.health === "crit")
+                                return Appearance.colors.colError;
+                            if (root.health === "warn")
+                                return Appearance.colors.colTertiary;
+                            return Appearance.colors.colSubtext;
+                        }
+                        text: root.offline ? Statusphere.offlineLineFor(root.account) : Statusphere.statusFor(root.account)
                     }
                 }
 
@@ -232,7 +240,7 @@ Rectangle {
         PresenceDetailCard { // Right click: the noisy stuff (cpu/mem/disk, workspace, weather)
             Layout.fillWidth: true
             Layout.topMargin: 4
-            visible: root.showDetails
+            visible: root.showDetails || (root.isServer && !root.offline && Config.options.sidebar.statusphere.server.showMetrics)
             account: root.account
         }
 

@@ -13,6 +13,8 @@ Item {
     property bool offline: true
     property bool hidden: false
     property bool interactive: false
+    readonly property bool isServer: Statusphere.isServer(root.account)
+    readonly property string health: Statusphere.healthFor(root.account)
     property real holdProgress: 0
 
     signal holdStarted
@@ -73,10 +75,23 @@ Item {
 
         StyledText {
             anchors.centerIn: parent
-            opacity: root.hidden ? 0 : 1
+            opacity: (root.hidden || root.isServer) ? 0 : 1
             font.pixelSize: Appearance.font.pixelSize.large
             color: root.offline ? Appearance.colors.colSubtext : Appearance.colors.colOnSecondaryContainer
             text: Statusphere.initialFor(root.account)
+
+            Behavior on opacity {
+                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+            }
+        }
+
+        MaterialSymbol { // A machine has no initial worth showing
+            anchors.centerIn: parent
+            opacity: (root.isServer && !root.hidden) ? 1 : 0
+            fill: 0
+            text: "dns"
+            iconSize: Appearance.font.pixelSize.larger
+            color: root.offline ? Appearance.colors.colSubtext : Appearance.colors.colOnSecondaryContainer
 
             Behavior on opacity {
                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -105,7 +120,17 @@ Item {
             right: parent.right
             bottom: parent.bottom
         }
-        color: root.offline ? Appearance.colors.colLayer2 : (root.hidden ? Appearance.colors.colSecondary : Appearance.colors.colPrimary)
+        color: {
+            if (root.offline)
+                return Appearance.colors.colLayer2;
+            if (root.hidden)
+                return Appearance.colors.colSecondary;
+            if (root.health === "crit")
+                return Appearance.colors.colError;
+            if (root.health === "warn")
+                return Appearance.colors.colTertiary;
+            return Appearance.colors.colPrimary;
+        }
         border.width: 2
         border.color: Appearance.colors.colLayer2
 
