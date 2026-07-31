@@ -90,6 +90,13 @@ ShellRoot {
             id: grabTimer
             interval: root.settle
             onTriggered: {
+                const checks = loader.item?.checks; // A function, so it reads the settled state
+                for (const check of (typeof checks === "function" ? checks() : checks ?? [])) {
+                    const tol = check.tol ?? 0.5;
+                    const near = typeof check.got === "number" && typeof check.want === "number" && Math.abs(check.got - check.want) <= tol;
+                    const ok = near || JSON.stringify(check.got) === JSON.stringify(check.want);
+                    console.log(`[harness] ${ok ? "check" : "FAIL check"} ${check.name}: got ${JSON.stringify(check.got)} want ${JSON.stringify(check.want)}`);
+                }
                 for (const path of root.probe) {
                     let value = loader.item;
                     for (const part of path.split("."))

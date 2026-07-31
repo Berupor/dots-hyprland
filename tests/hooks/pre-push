@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Pre-push gate: static widget lints always, plus isolated probes of the slots
-# when there is a Wayland session to render in. The live smoke test stays manual,
-# it writes to widgets.json and drops a corrupt widget into the live config.
+# Pre-push gate: static widget lints always, plus assertion cases and isolated
+# probes of the slots when there is a Wayland session to render in. The live
+# smoke test stays manual, it writes to widgets.json and drops a corrupt widget
+# into the live config.
 # Skip with SKIP_PREPUSH=1 or git push --no-verify.
 # Enable per clone: git config core.hooksPath tests/hooks
 set -u
@@ -22,6 +23,7 @@ PROBES=(
 )
 
 if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v qs > /dev/null; then
+    "$REPO/tests/qml-cases.sh" || FAIL=1
     for probe in "${PROBES[@]}"; do
         # shellcheck disable=SC2086
         if out=$("$REPO/tests/widget-probe.sh" $probe -s 2000 2>&1); then
