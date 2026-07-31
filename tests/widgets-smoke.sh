@@ -19,10 +19,18 @@ mapfile -t WIDGETS < <(find "$WDIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\
 echo "widgets: ${WIDGETS[*]}"
 
 # --- static: qmllint ---------------------------------------------------------
-while IFS= read -r f; do
-    out=$(qmllint "$f" 2>&1 | grep -v "qs\.\|import qs\|Quickshell\|Failed to import\|not installed\|--qmldirs\|^$")
-    [ -n "$out" ] && { echo "qmllint: $f"; echo "$out"; FAIL=1; }
-done < <(find "$WDIR" -name '*.qml')
+# The qmllint in PATH is Qt5's and dies with 255 and no output on this tree, so
+# take the Qt6 one. Only syntax level counts: type warnings on the qs.* imports
+# and on JsonAdapter properties are noise it cannot resolve outside qs.
+QMLLINT=$(ls /usr/lib/qt6/bin/qmllint 2> /dev/null || command -v qmllint6 qmllint 2> /dev/null | head -1)
+if [ -n "$QMLLINT" ]; then
+    while IFS= read -r f; do
+        out=$("$QMLLINT" "$f" 2>&1 | grep -E "^Error:|\[syntax")
+        [ -n "$out" ] && { echo "qmllint: $f"; echo "$out"; FAIL=1; }
+    done < <(find "$WDIR" "$REPO/tests/cases" -name '*.qml')
+else
+    echo "no qmllint, syntax lint skipped"
+fi
 
 # --- static: design lint (Material You contract) -----------------------------
 hex=$(grep -rnE 'color:.*"#[0-9a-fA-F]{3,8}"' "$WDIR" | grep -v transparent)
