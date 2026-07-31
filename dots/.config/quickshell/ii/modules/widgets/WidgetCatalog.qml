@@ -9,6 +9,7 @@ import QtQuick
 Singleton {
     id: root
     property list<QtObject> widgets: []
+    property list<string> brokenViews: []
 
     function isEnabled(widgetId) {
         return (WidgetsStore.data.enabled ?? []).includes(widgetId)
@@ -16,6 +17,17 @@ Singleton {
 
     function forSlot(slot) {
         return widgets.filter(w => w.slots[slot] !== undefined && w.available && isEnabled(w.widgetId))
+    }
+
+    /// Widget replacing a host view, null when the built-in one stands
+    function viewFor(slot) {
+        return root.forSlot(slot).filter(w => !root.brokenViews.includes(w.widgetId))[0] ?? null
+    }
+
+    // A view that won't load can't be switched off from itself
+    function dropView(widgetId, url) {
+        ErrorReporter.report(widgetId, `${url} failed to load`)
+        root.brokenViews = root.brokenViews.concat([widgetId])
     }
 
     function option(widgetId, key) {

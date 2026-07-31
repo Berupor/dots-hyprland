@@ -88,7 +88,13 @@ ApplicationWindow {
     height: 750
     color: Appearance.m3colors.m3background
 
+    WidgetViewLoader {
+        anchors.fill: parent
+        slot: "settingsView"
+    }
+
     ColumnLayout {
+        visible: !WidgetCatalog.viewFor("settingsView")
         anchors {
             fill: parent
             margins: contentPadding
