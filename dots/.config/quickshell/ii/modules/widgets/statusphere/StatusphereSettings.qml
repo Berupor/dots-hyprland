@@ -3,26 +3,9 @@ import QtQuick.Layouts
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.widgets
 
-ContentPage {
-    forceWidth: true
-
-    ContentSection {
-        icon: "groups"
-        title: Translation.tr("Room presence")
-
-        ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr('Sidebar tab')
-            checked: Config.options.sidebar.statusphere.enable
-            onCheckedChanged: {
-                Config.options.sidebar.statusphere.enable = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Who's around in your statusphere room, in the left sidebar.\nNeeds the statusphere cli and a registered account")
-            }
-        }
-    }
+ColumnLayout {
 
     ContentSection {
         icon: "visibility_off"
@@ -43,9 +26,9 @@ ContentPage {
         ConfigSwitch {
             buttonIcon: "toast"
             text: Translation.tr('Remind me in the bar')
-            checked: Config.options.bar.statusphere.incognitoIndicator
+            checked: WidgetCatalog.option("statusphere", "incognitoIndicator") ?? true
             onCheckedChanged: {
-                Config.options.bar.statusphere.incognitoIndicator = checked;
+                WidgetsStore.setOption("statusphere", "incognitoIndicator", checked);
             }
             StyledToolTip {
                 text: Translation.tr("An icon while you're hiding, so you don't stay dark for a week by accident.\nClick it to be visible again")

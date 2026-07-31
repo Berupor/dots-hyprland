@@ -18,7 +18,7 @@ Singleton {
     property string selfAccountId: ""
     property string selfDeviceId: ""
     readonly property bool available: root.binaryFound && root.registered
-    readonly property bool enabled: Config.options.sidebar.statusphere.enable || Config.options.background.widgets.presence.enable
+    readonly property bool enabled: WidgetCatalog.isEnabled("statusphere")
     readonly property bool shouldRun: root.enabled && root.available
 
     // Raw member maps from the last parsed line, flat and heterogeneous by design

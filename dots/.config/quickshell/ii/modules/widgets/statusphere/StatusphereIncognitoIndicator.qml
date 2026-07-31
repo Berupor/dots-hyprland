@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import qs.modules.common
+import qs.modules.widgets
 import qs.modules.common.widgets
 import qs.services
 import QtQuick
@@ -9,7 +10,8 @@ import QtQuick
 MouseArea {
     id: root
 
-    visible: Statusphere.hiding
+    property bool shown: Statusphere.hiding && (WidgetCatalog.option("statusphere", "incognitoIndicator") ?? true)
+    visible: shown
     implicitWidth: visible ? icon.implicitWidth : 0
     implicitHeight: Appearance.sizes.barHeight
     hoverEnabled: !Config.options.bar.tooltips.clickToShow

@@ -4,9 +4,9 @@ import QtQuick
 import QtQuick.Layouts
 import qs.services
 import qs.modules.common
+import qs.modules.widgets
 import qs.modules.common.widgets
 import qs.modules.ii.background.widgets
-import qs.modules.ii.sidebarLeft.presence
 
 // Same room presence rows as the left sidebar, as a card on the wallpaper.
 AbstractBackgroundWidget {

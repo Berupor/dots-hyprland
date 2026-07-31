@@ -250,9 +250,6 @@ Singleton {
                 property bool showBackground: true
                 property bool verbose: true
                 property bool vertical: false
-                property JsonObject statusphere: JsonObject {
-                    property bool incognitoIndicator: true // Hidden anyway unless you're hiding
-                }
                 property JsonObject resources: JsonObject {
                     property bool showMemory: true
                     property bool showSwap: true
@@ -540,7 +537,6 @@ Singleton {
                 }
 
                 property JsonObject statusphere: JsonObject {
-                    property bool enable: true
                     property JsonObject incognito: JsonObject {
                         property bool enable: true // Hold your own row to pick how long
                     }

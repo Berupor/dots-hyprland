@@ -5,6 +5,8 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
+import qs.modules.widgets
+import qs.modules.widgets.statusphere
 import qs.modules.common.functions as CF
 import QtQuick
 import QtQuick.Layouts
@@ -16,7 +18,6 @@ import Quickshell.Hyprland
 
 import qs.modules.ii.background.widgets
 import qs.modules.ii.background.widgets.clock
-import qs.modules.ii.background.widgets.presence
 import qs.modules.ii.background.widgets.weather
 
 Variants {
@@ -267,8 +268,8 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.presence.enable && Statusphere.available
-                    sourceComponent: PresenceWidget {
+                    shown: WidgetCatalog.isEnabled("statusphere") && Config.options.background.widgets.presence.enable && Statusphere.available
+                    sourceComponent: PresenceBackgroundWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
                         scaledScreenWidth: bgRoot.screen.width

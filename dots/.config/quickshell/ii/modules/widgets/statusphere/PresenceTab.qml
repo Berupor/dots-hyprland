@@ -2,8 +2,8 @@ pragma ComponentBehavior: Bound
 
 import qs.services
 import qs.modules.common
+import qs.modules.widgets
 import qs.modules.common.widgets
-import qs.modules.ii.sidebarLeft.presence
 import QtQuick
 import QtQuick.Layouts
 
