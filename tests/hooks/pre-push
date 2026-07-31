@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Pre-push gate: static widget lints always, plus isolated probes of the slots
+# when there is a Wayland session to render in. The live smoke test stays manual,
+# it writes to widgets.json and drops a corrupt widget into the live config.
+# Skip with SKIP_PREPUSH=1 or git push --no-verify.
+# Enable per clone: git config core.hooksPath tests/hooks
+set -u
+
+[ "${SKIP_PREPUSH:-0}" = 1 ] && exit 0
+
+REPO=$(git rev-parse --show-toplevel)
+FAIL=0
+
+"$REPO/tests/widgets-smoke.sh" --static || FAIL=1
+
+PROBES=(
+    "peripheralBattery barIndicator -o barIndicator=true -g 200x60"
+    "peripheralBattery sidebarRightTab -o sidebarTab=true -g 380x420"
+    "androidWebcam barIndicator -g 200x60"
+    "vpn barUtilButton -g 64x64"
+    "statusphere sidebarLeftTab -g 400x500" # No -S: empty state, no network side effects
+)
+
+if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v qs > /dev/null; then
+    for probe in "${PROBES[@]}"; do
+        # shellcheck disable=SC2086
+        if out=$("$REPO/tests/widget-probe.sh" $probe -s 2000 2>&1); then
+            echo "probe ok   ${probe%% -*}"
+        else
+            echo "probe FAIL $probe"
+            echo "$out" | sed 's/^/  /'
+            FAIL=1
+        fi
+    done
+else
+    echo "no wayland session, probes skipped"
+fi
+
+[ "$FAIL" = 0 ] || echo "pre-push failed, push anyway with --no-verify"
+exit "$FAIL"

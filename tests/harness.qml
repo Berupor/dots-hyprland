@@ -25,6 +25,7 @@ ShellRoot {
     property int settle: parseInt(Quickshell.env("QS_HARNESS_SETTLE") ?? "1200")
     property int itemW: parseInt(Quickshell.env("QS_HARNESS_IW") ?? "0")
     property int itemH: parseInt(Quickshell.env("QS_HARNESS_IH") ?? "0")
+    property string bg: Quickshell.env("QS_HARNESS_BG") ?? ""
 
     readonly property var manifest: WidgetCatalog.widgets.find(w => w.widgetId === root.widgetId) ?? null
     readonly property string source: {
@@ -57,20 +58,28 @@ ShellRoot {
         implicitHeight: parseInt(Quickshell.env("QS_HARNESS_H") ?? "360")
         color: Appearance.colors.colLayer0
 
-        Loader {
-            id: loader
-            width: root.itemW > 0 ? root.itemW : (item?.implicitWidth > 0 ? item.implicitWidth : parent.width)
-            height: root.itemH > 0 ? root.itemH : (item?.implicitHeight > 0 ? item.implicitHeight : parent.height)
-            source: root.source
+        // Opaque, so items that count on a host surface don't grab as washed-out alpha
+        Rectangle {
+            id: stage
+            implicitWidth: loader.width
+            implicitHeight: loader.height
+            color: root.bg !== "" ? root.bg : Appearance.colors.colLayer0
 
-            onLoaded: {
-                for (const key in root.props)
-                    item[key] = root.props[key];
-                grabTimer.start()
-            }
-            onStatusChanged: if (status === Loader.Error) {
-                console.log(`[harness] FAIL load ${root.source}`)
-                console.log("[harness] done")
+            Loader {
+                id: loader
+                width: root.itemW > 0 ? root.itemW : (item?.implicitWidth > 0 ? item.implicitWidth : win.width)
+                height: root.itemH > 0 ? root.itemH : (item?.implicitHeight > 0 ? item.implicitHeight : win.height)
+                source: root.source
+
+                onLoaded: {
+                    for (const key in root.props)
+                        item[key] = root.props[key];
+                    grabTimer.start()
+                }
+                onStatusChanged: if (status === Loader.Error) {
+                    console.log(`[harness] FAIL load ${root.source}`)
+                    console.log("[harness] done")
+                }
             }
         }
 
@@ -85,7 +94,7 @@ ShellRoot {
                     console.log(`[harness] probe ${path} = ${JSON.stringify(value)}`)
                 }
                 console.log(`[harness] size ${loader.width}x${loader.height}`)
-                loader.grabToImage(res => {
+                stage.grabToImage(res => {
                     console.log(`[harness] png ${res.saveToFile(root.out) ? "ok" : "FAIL"} ${root.out}`)
                     console.log("[harness] done")
                 })

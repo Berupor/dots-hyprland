@@ -5,7 +5,7 @@
 # the way and no clicks or keystrokes are synthesized.
 #
 #   tests/widget-probe.sh <widget> <slot> [flags]
-#   tests/widget-probe.sh -f modules/widgets/foo/Bar.qml [flags]
+#   tests/widget-probe.sh [<widget>] -f modules/widgets/foo/Bar.qml [flags]
 #
 #   -o key=value  widget option for this run (json value, else string)
 #   -p prop=value ditto, set on the loaded item after load: hover states,
@@ -13,7 +13,10 @@
 #   -r prop.path  print that property after settling, dotted paths ok
 #   -g WxH        item size, default 640x360
 #   -s ms         settle time before probing, default 1200
-#   -f file.qml   load a path relative to the ii dir, skipping the catalog
+#   -f file.qml   load a path relative to the ii dir, skipping the catalog. Name the
+#                 widget too if its polling waits on the catalog switch
+#   -b color      backdrop behind the item, default the shell background. Items that
+#                 expect a host surface (popup bodies) come out washed out without it
 #   -S name       symlink ~/.config/<name> into the temp config dir, for widgets
 #                 whose real state lives outside illogical-impulse (accounts,
 #                 tokens). Without it that state reads as empty, which is often
@@ -23,7 +26,7 @@
 # Grabbing needs a rendering window, and a hidden one does not render, hence
 # the corner. Slots that only exist for some option value need that -o.
 # harness.qml lives here but is copied into the ii dir for the run, since
-# `import qs.*` resolves against the config root. One probe at a time.
+# `import qs.*` resolves against the config root. Runs serialize on a flock.
 set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -38,13 +41,16 @@ KEEP=0
 IW=640
 IH=360
 SETTLE=1200
+BG=""
 FAIL=0
 
-WIDGET="${1:-}"
-[ "${WIDGET#-}" = "$WIDGET" ] && SLOT="${2:-}" || { WIDGET=""; SLOT=""; }
-[ -n "$WIDGET" ] && shift 2
+WIDGET=""
+SLOT=""
+# Positional widget, then an optional slot: `-f` runs may name the widget alone
+[ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { WIDGET="$1"; shift; }
+[ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { SLOT="$1"; shift; }
 SHARE=()
-while getopts "o:p:r:g:s:f:S:k" flag; do
+while getopts "o:p:r:g:s:f:S:b:k" flag; do
     case "$flag" in
         o) OPTS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$OPTS") ;;
         p) PROPS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$PROPS") ;;
@@ -53,6 +59,7 @@ while getopts "o:p:r:g:s:f:S:k" flag; do
         s) SETTLE=$OPTARG ;;
         f) FILE=$OPTARG ;;
         S) SHARE+=("$OPTARG") ;;
+        b) BG=$OPTARG ;;
         k) KEEP=1 ;;
     esac
 done
@@ -67,6 +74,10 @@ cleanup() {
     [ "$KEEP" = 1 ] && echo "kept: $CFG" || rm -rf "$CFG"
 }
 trap cleanup EXIT INT TERM
+
+# The harness copy and the pkill pattern are shared, so runs have to queue up
+exec 9> /tmp/widget-probe.lock
+flock -w 120 9 || { echo "another probe holds the lock"; exit 2; }
 cp "$REPO/tests/harness.qml" "$HARNESS"
 
 # Throwaway config dir seeded from the real one, so theme and colors match but
@@ -88,7 +99,7 @@ export XDG_CONFIG_HOME="$CFG"
 export QS_HARNESS_WIDGET="$WIDGET" QS_HARNESS_SLOT="$SLOT" QS_HARNESS_FILE="$FILE"
 export QS_HARNESS_OUT="$OUT" QS_HARNESS_SETTLE="$SETTLE"
 export QS_HARNESS_IW="$IW" QS_HARNESS_IH="$IH" QS_HARNESS_W=8 QS_HARNESS_H=8
-export QS_HARNESS_PROPS='$PROPS' QS_HARNESS_PROBE='$PROBE'
+export QS_HARNESS_PROPS='$PROPS' QS_HARNESS_PROBE='$PROBE' QS_HARNESS_BG="$BG"
 exec timeout 40 qs -p "$HARNESS"
 EOF
 chmod +x "$CFG/run.sh"
