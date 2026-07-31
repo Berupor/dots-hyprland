@@ -50,7 +50,7 @@ a `Manifest.qml`; no shared files to edit. The contract is written down in
 ## Install
 
 ```sh
-git clone https://github.com/Berupor/dots-hyprland.git
+git clone -b extensions https://github.com/Berupor/dots-hyprland.git
 cd dots-hyprland
 ```
 
@@ -61,25 +61,40 @@ config - it's a long one):
 ./setup install
 ```
 
-Already running *illogical-impulse* and only after the shell config:
+Already running *illogical-impulse*? Only the shell config differs, so keep the old
+one around and swap the tree:
 
 ```sh
-cp -r dots/.config/quickshell/ii ~/.config/quickshell/
+cp -a ~/.config/quickshell/ii ~/.config/quickshell/ii.upstream
+rsync -a --delete dots/.config/quickshell/ii/ ~/.config/quickshell/ii/
 ```
 
-`./setup install-files` sits in between: all the config files, no packages.
+`Ctrl+Super+R` restarts the shell, then pick widgets in the settings app. `--delete`
+leaves exactly the fork's tree behind, local edits under `ii/` included - hence the
+copy. Nothing outside `ii/` changes and no extra packages are needed: widgets ship
+disabled, and `satty` is the only new default (screenshot annotation, switch it off in
+settings if you don't have it).
+
+`./setup install-files` sits in between: all the config files, no packages. Take that
+one if your dots are older than the branch's merge base, since the shell alone would
+end up newer than everything around it. Clashing files go to `~/ii-original-dots-backup`.
 
 ## The way back
 
-Didn't like it? The same clone carries the untouched upstream shell:
+```sh
+rm -rf ~/.config/quickshell/ii
+mv ~/.config/quickshell/ii.upstream ~/.config/quickshell/ii
+```
+
+Kept no copy? The same clone carries the untouched upstream shell:
 
 ```sh
 git checkout main
-cp -r dots/.config/quickshell/ii ~/.config/quickshell/
-rm ~/.config/illogical-impulse/widgets.json   # optional, forgets the widget picks
+rsync -a --delete dots/.config/quickshell/ii/ ~/.config/quickshell/ii/
 ```
 
-Your `config.json` survives either direction.
+Either way, `rm ~/.config/illogical-impulse/widgets.json` forgets the widget picks.
+Your `config.json` survives both directions - upstream skips the keys it doesn't know.
 
 ## Pulling upstream
 
