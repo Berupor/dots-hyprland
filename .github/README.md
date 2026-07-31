@@ -22,6 +22,10 @@ their options; widgets with missing dependencies say so instead of turning into 
 buttons. Picks are saved to `~/.config/illogical-impulse/widgets.json`, which nothing
 else touches.
 
+The same page can point widget failures at an ntfy topic, a webhook or a command. It
+sends the error plus the last 100 log lines, so nothing goes out until you fill in a
+target, and it asks first.
+
 <details open>
   <summary>In the catalog</summary>
 

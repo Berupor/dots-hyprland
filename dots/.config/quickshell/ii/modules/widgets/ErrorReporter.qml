@@ -12,6 +12,11 @@ import QtQuick
  */
 Singleton {
     id: root
+
+    enum TestState {
+        Idle, Sending, Sent, Failed
+    }
+
     property var reported: ({})
     property var askQueue: [] // notify-send is one at a time, failures are not
     property bool asking: false
@@ -54,11 +59,36 @@ Singleton {
     }
 
     // Logs may carry window titles and the like, hence the explicit consent
-    function send(widgetId, message) {
+    function argv(widgetId, message) {
         const pipe = root.channels[WidgetsStore.data.errorReportsChannel ?? "ntfy"]
         if (pipe === undefined)
+            return null
+        return ["env", `RW=${widgetId}`, `RM=${message}`, `RT=${WidgetsStore.data.errorReportsTarget}`, "bash", "-c", `{ echo "widget: $RW"; echo "$RM"; echo; qs -c ii log 2>/dev/null | tail -100; } | ${pipe}`]
+    }
+
+    function send(widgetId, message) {
+        const cmd = root.argv(widgetId, message)
+        if (cmd)
+            Quickshell.execDetached(cmd)
+    }
+
+    // Real reports are fire and forget, so a wrong target only shows up on a test run
+    property int testState: ErrorReporter.TestState.Idle
+
+    function test() {
+        const cmd = root.argv("test", "Test report from settings")
+        if (!cmd) {
+            root.testState = ErrorReporter.TestState.Failed
             return
-        Quickshell.execDetached(["env", `RW=${widgetId}`, `RM=${message}`, `RT=${WidgetsStore.data.errorReportsTarget}`, "bash", "-c", `{ echo "widget: $RW"; echo "$RM"; echo; qs -c ii log 2>/dev/null | tail -100; } | ${pipe}`])
+        }
+        testProc.command = cmd
+        root.testState = ErrorReporter.TestState.Sending
+        testProc.running = true
+    }
+
+    Process {
+        id: testProc
+        onExited: exitCode => root.testState = (exitCode === 0 ? ErrorReporter.TestState.Sent : ErrorReporter.TestState.Failed)
     }
 
     Process {
