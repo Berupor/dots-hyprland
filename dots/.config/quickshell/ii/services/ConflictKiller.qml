@@ -24,7 +24,8 @@ Singleton {
 
     Process {
         id: checkConflictsProc
-        command: ["bash", "-c", `echo "$(pidof kded6);$(pidof mako dunst)"`]
+        // A tray conflicts only when it owns the watcher name, not whenever kded6 runs
+        command: ["bash", "-c", `echo "$(busctl --user status org.kde.StatusNotifierWatcher 2>/dev/null | awk -F= '/^Comm=/ && $2 != "qs" && $2 != "quickshell" { print $2 }');$(pidof mako dunst)"`]
         stdout: StdioCollector {
             onStreamFinished: {
                 const output = this.text;
