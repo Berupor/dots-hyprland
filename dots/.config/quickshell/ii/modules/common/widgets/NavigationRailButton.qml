@@ -14,6 +14,8 @@ TabButton {
     property string buttonText
     property bool expanded: false
     property bool showToggledHighlight: true
+    property bool animateStates: false // Or the labels fly in on window open
+    Component.onCompleted: Qt.callLater(() => root.animateStates = true)
     readonly property real visualWidth: root.expanded ? root.baseSize + 20 + itemText.implicitWidth : root.baseSize
 
     property real baseSize: 56
@@ -71,6 +73,7 @@ TabButton {
                 }
             }
             transitions: Transition {
+                enabled: root.animateStates
                 AnchorAnimation {
                     duration: Appearance.animation.elementMoveFast.duration
                     easing.type: Appearance.animation.elementMoveFast.type
@@ -135,6 +138,7 @@ TabButton {
                 }
             }
             transitions: Transition {
+                enabled: root.animateStates
                 AnchorAnimation {
                     duration: Appearance.animation.elementMoveFast.duration
                     easing.type: Appearance.animation.elementMoveFast.type
