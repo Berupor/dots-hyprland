@@ -77,6 +77,7 @@ fi
 cp "$STORE" "$BAK"
 trap restore EXIT
 trap 'restore; exit 130' INT TERM # bash would resume the loop otherwise
+jq '.errorReports = "never"' "$STORE" | write_store # Our own broken widget shouldn't ask to phone home
 
 # --- combos ------------------------------------------------------------------
 combos=("[]")

@@ -8,6 +8,9 @@
 #   tests/widget-probe.sh [<widget>] -f modules/widgets/foo/Bar.qml [flags]
 #
 #   -o key=value  widget option for this run (json value, else string)
+#   -K key=value  ditto, but a top-level widgets.json key: error report settings
+#                 and anything else that is not per-widget. The report target is
+#                 blanked for every run, so probes never ship reports anywhere
 #   -p prop=value ditto, set on the loaded item after load: hover states,
 #                 model stubs, anything the slot exposes
 #   -r prop.path  print that property after settling, dotted paths ok
@@ -34,6 +37,7 @@ II="$REPO/dots/.config/quickshell/ii"
 HARNESS="$II/harness.qml" # Copied in for the run, `import qs.*` needs it in the ii root
 OUT="${QS_PROBE_OUT:-/tmp/widget-probe.png}"
 OPTS='{}'
+KEYS='{}'
 PROPS='{}'
 PROBE='[]'
 FILE=""
@@ -50,9 +54,10 @@ SLOT=""
 [ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { WIDGET="$1"; shift; }
 [ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { SLOT="$1"; shift; }
 SHARE=()
-while getopts "o:p:r:g:s:f:S:b:k" flag; do
+while getopts "o:K:p:r:g:s:f:S:b:k" flag; do
     case "$flag" in
         o) OPTS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$OPTS") ;;
+        K) KEYS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$KEYS") ;;
         p) PROPS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$PROPS") ;;
         r) PROBE=$(jq -c --arg p "$OPTARG" '. + [$p]' <<< "$PROBE") ;;
         g) IW=${OPTARG%x*}; IH=${OPTARG#*x} ;;
@@ -84,8 +89,8 @@ cp "$REPO/tests/harness.qml" "$HARNESS"
 # nothing we write lands in the live config
 CFG=$(mktemp -d /tmp/widget-probe.XXXXXX)
 cp -r "$HOME/.config/illogical-impulse" "$CFG/"
-jq -c --arg w "$WIDGET" --argjson o "$OPTS" \
-    '.enabled = [$w] | .options[$w] = ((.options[$w] // {}) * $o)' \
+jq -c --arg w "$WIDGET" --argjson o "$OPTS" --argjson k "$KEYS" \
+    '.errorReportsTarget = "" | . * $k | .enabled = [$w] | .options[$w] = ((.options[$w] // {}) * $o)' \
     "$HOME/.config/illogical-impulse/widgets.json" > "$CFG/illogical-impulse/widgets.json"
 for name in ${SHARE[@]+"${SHARE[@]}"}; do
     ln -sfn "$HOME/.config/$name" "$CFG/$name"

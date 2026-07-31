@@ -27,8 +27,10 @@ for file in "${CASES[@]}"; do
     name=$(basename "$file" .qml)
     [ -f "$file" ] || { echo "case FAIL $name: no such case"; FAIL=1; continue; }
     flags=$(sed -n '1s|^//@ probe ||p' "$file")
+    # Exit code ignored on purpose: it also fails on a missing PNG, and the grab
+    # sometimes gets no frame. A case with no checks is caught below anyway.
     # shellcheck disable=SC2086
-    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" -f "$file" $flags 2>&1) || FAIL=1
+    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" -f "$file" $flags 2>&1)
     checks=$(grep -c "^check \|^FAIL check " <<< "$out")
     bad=$(grep "^FAIL check \|^FAIL load \|^FAIL no slot" <<< "$out")
     if [ -z "$bad" ] && [ "$checks" -gt 0 ]; then
