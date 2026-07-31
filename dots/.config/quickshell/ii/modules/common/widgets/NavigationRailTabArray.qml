@@ -12,9 +12,21 @@ Item {
     implicitWidth: tabBarColumn.implicitWidth
     Layout.topMargin: 25
 
+    // A Repeater sits among the buttons in children, so indices there aren't tab indices
+    readonly property var buttons: {
+        const result = [];
+        for (let i = 0; i < tabBarColumn.children.length; i++) {
+            const child = tabBarColumn.children[i];
+            if (child?.baseSize !== undefined)
+                result.push(child);
+        }
+        return result;
+    }
+    readonly property Item currentButton: root.buttons[root.currentIndex] ?? null
+
     Rectangle {
-        property real itemHeight: tabBarColumn.children[0]?.baseSize ?? 56
-        property real baseHighlightHeight: tabBarColumn.children[0]?.baseHighlightHeight ?? 56
+        property real itemHeight: root.currentButton?.baseSize ?? 56
+        property real baseHighlightHeight: root.currentButton?.baseHighlightHeight ?? 32
         anchors {
             top: tabBarColumn.top
             left: tabBarColumn.left
@@ -23,7 +35,7 @@ Item {
         radius: Appearance.rounding.full
         color: Appearance.colors.colSecondaryContainer
         implicitHeight: root.expanded ? itemHeight : baseHighlightHeight
-        implicitWidth: tabBarColumn?.children[root.currentIndex]?.visualWidth ?? 100
+        implicitWidth: root.currentButton?.visualWidth ?? itemHeight
 
         Behavior on anchors.topMargin {
             NumberAnimation {
