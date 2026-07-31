@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.services
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Layouts
 
@@ -15,7 +15,8 @@ import QtQuick.Layouts
 MouseArea {
     id: root
 
-    property bool showAll: Config.options.bar.peripheralBattery.showAll
+    property bool shown: PeripheralBattery.count > 0
+    property bool showAll: WidgetCatalog.option("peripheralBattery", "showAll") ?? true
     readonly property int circleSize: 20
     readonly property var shownDevices: {
         if (PeripheralBattery.count === 0)

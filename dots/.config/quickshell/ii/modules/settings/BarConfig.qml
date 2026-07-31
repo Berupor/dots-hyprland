@@ -20,32 +20,6 @@ ContentPage {
         }
     }
     
-    ContentSection {
-        icon: "battery_android_full"
-        title: Translation.tr("Peripheral battery")
-
-        ConfigSwitch {
-            buttonIcon: "check"
-            text: Translation.tr("Show in the bar")
-            checked: Config.options.bar.peripheralBattery.enable
-            onCheckedChanged: {
-                Config.options.bar.peripheralBattery.enable = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Mice, keyboards, headsets and other bluetooth stuff.\nThe right sidebar shows them too")
-            }
-        }
-
-        ConfigSwitch {
-            buttonIcon: "devices_other"
-            text: Translation.tr("Every device, not just the emptiest one")
-            enabled: Config.options.bar.peripheralBattery.enable
-            checked: Config.options.bar.peripheralBattery.showAll
-            onCheckedChanged: {
-                Config.options.bar.peripheralBattery.showAll = checked;
-            }
-        }
-    }
 
     ContentSection {
         icon: "monitoring"

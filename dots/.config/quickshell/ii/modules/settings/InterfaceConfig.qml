@@ -487,18 +487,6 @@ ContentPage {
             }
         }
 
-        ConfigSwitch {
-            buttonIcon: "battery_android_full"
-            text: Translation.tr('Peripheral battery tab')
-            checked: Config.options.sidebar.peripheralBattery.enable
-            onCheckedChanged: {
-                Config.options.sidebar.peripheralBattery.enable = checked;
-            }
-            StyledToolTip {
-                text: Translation.tr("Battery of mice, keyboards, headsets and other bluetooth stuff,\nnext to Calendar and To Do")
-            }
-        }
-
         ContentSubsection {
             title: Translation.tr("Quick toggles")
             
