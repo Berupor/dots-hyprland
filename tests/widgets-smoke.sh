@@ -7,6 +7,7 @@ set -u
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 WDIR="$REPO/dots/.config/quickshell/ii/modules/widgets"
 STORE="$HOME/.config/illogical-impulse/widgets.json"
+BAK="$STORE.smoke-bak"
 LIVE="$HOME/.config/quickshell/ii/modules/widgets"
 SETTLE=3
 FAIL=0
@@ -28,8 +29,42 @@ fonts=$(grep -rn "font.family:" "$WDIR" | grep -v "Appearance\.")
 [ -n "$hex" ] && { echo "design lint, hardcoded colors:"; echo "$hex"; FAIL=1; }
 [ -n "$fonts" ] && { echo "design lint, fonts outside Appearance:"; echo "$fonts"; FAIL=1; }
 
+# --- save/restore ------------------------------------------------------------
+write_store() { # Atomic: FileView reads on the rename, never a partial file
+    cat > "$STORE.new" && jq -e . "$STORE.new" > /dev/null && mv "$STORE.new" "$STORE" && return
+    echo "WARN bad write to $STORE"
+    rm -f "$STORE.new"
+    return 1
+}
+
+set_enabled() {
+    jq --argjson e "$1" '.enabled = $e' "$STORE" | write_store
+}
+
+restore() { # The shell keeps widgets.json in memory and rewrites it whole on any
+    [ -f "$BAK" ] || return 0 # UI change, so one write can lose the race
+    rm -rf "$LIVE/zbroken"
+    for _ in 1 2 3; do
+        write_store < "$BAK"
+        sleep "$SETTLE"
+        if cmp -s <(jq -S . "$BAK") <(jq -S . "$STORE"); then
+            rm -f "$BAK"
+            echo "restored widgets.json"
+            return 0
+        fi
+    done
+    echo "WARN could not restore widgets.json, backup kept at $BAK"
+}
+
+if [ -f "$BAK" ]; then # Killed run, its backup is the real state
+    echo "leftover $BAK, restoring it first"
+    restore
+fi
+cp "$STORE" "$BAK"
+trap restore EXIT
+trap 'restore; exit 130' INT TERM # bash would resume the loop otherwise
+
 # --- combos ------------------------------------------------------------------
-orig=$(jq -c '.enabled' "$STORE")
 combos=("[]")
 for w in "${WIDGETS[@]}"; do combos+=("[\"$w\"]"); done
 combos+=("$(printf '%s\n' "${WIDGETS[@]}" | jq -R . | jq -cs .)")
@@ -38,10 +73,6 @@ for ((i = 0; i < ${#WIDGETS[@]}; i++)); do
         combos+=("[\"${WIDGETS[i]}\",\"${WIDGETS[j]}\"]")
     done
 done
-
-set_enabled() {
-    jq --argjson e "$1" '.enabled = $e' "$STORE" > "$STORE.tmp" && mv "$STORE.tmp" "$STORE"
-}
 
 echo "running ${#combos[@]} combos..."
 for combo in "${combos[@]}"; do
@@ -77,7 +108,6 @@ if [ "${1:-}" = "--broken" ]; then
     rm -rf "$LIVE/zbroken"
 fi
 
-set_enabled "$orig"
-echo "restored enabled = $orig"
+restore
 [ "$FAIL" = 0 ] && echo PASS || echo FAIL
 exit "$FAIL"
