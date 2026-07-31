@@ -4,7 +4,9 @@ import Quickshell.Io
 
 /**
  * A catalog widget. To add one:
- * 1. Create modules/widgets/<id>/ with Manifest.qml and slot files
+ * 1. Create modules/widgets/<id>/ with Manifest.qml and slot files.
+ *    Service singletons go flat into modules/widgets/ (dynamically loaded
+ *    files resolve `import qs.modules.widgets`, but not subdir modules)
  * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`
  * 3. Declare options with defaults, read them via WidgetCatalog.option(id, key)
  * 4. List required binaries in `dependencies`

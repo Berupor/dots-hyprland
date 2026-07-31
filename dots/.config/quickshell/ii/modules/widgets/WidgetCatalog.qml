@@ -28,7 +28,9 @@ Singleton {
     function scan() {
         const found = []
         for (let i = 0; i < folders.count; i++) {
-            const dir = folders.get(i, "fileUrl")
+            // Resolve against this file, not the scanned fileUrl: components loaded
+            // from file:// urls can't import qs.* submodules
+            const dir = Qt.resolvedUrl(folders.get(i, "fileName"))
             const component = Qt.createComponent(dir + "/Manifest.qml")
             if (component.status === Component.Error) {
                 console.warn("[WidgetCatalog] " + component.errorString())
