@@ -50,6 +50,11 @@ ApplicationWindow {
             component: "modules/settings/InterfaceConfig.qml"
         },
         {
+            name: Translation.tr("Widgets"),
+            icon: "widgets",
+            component: "modules/settings/WidgetsConfig.qml"
+        },
+        {
             name: Translation.tr("Services"),
             icon: "settings",
             component: "modules/settings/ServicesConfig.qml"
