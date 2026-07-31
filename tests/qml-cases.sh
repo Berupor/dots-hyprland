@@ -6,6 +6,9 @@
 #
 #   //@ probe -g 320x260 -s 2000
 #
+# A case that needs widget options starts the line with the widget: `//@ probe
+# dotsUpdates -o notify=true`.
+#
 #   tests/qml-cases.sh [name ...]   # bare names, default all cases
 #
 # One instance per case, so put several fixtures in one file rather than
@@ -30,7 +33,8 @@ for file in "${CASES[@]}"; do
     # Exit code ignored on purpose: it also fails on a missing PNG, and the grab
     # sometimes gets no frame. A case with no checks is caught below anyway.
     # shellcheck disable=SC2086
-    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" -f "$file" $flags 2>&1)
+    # Flags first: a case naming a widget needs it in the leading positional
+    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" $flags -f "$file" 2>&1)
     checks=$(grep -c "^check \|^FAIL check " <<< "$out")
     bad=$(grep "^FAIL check \|^FAIL load \|^FAIL no slot" <<< "$out")
     if [ -z "$bad" ] && [ "$checks" -gt 0 ]; then
