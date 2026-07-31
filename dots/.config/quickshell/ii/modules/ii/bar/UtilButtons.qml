@@ -21,8 +21,6 @@ Item {
         spacing: 4
         anchors.centerIn: parent
 
-        VpnButton {}
-
         Repeater { // Catalog widgets
             model: WidgetCatalog.forSlot("barUtilButton")
             delegate: Loader {

@@ -95,7 +95,7 @@ Singleton {
     // Poll status
     Timer {
         interval: 5000
-        running: root.available
+        running: root.available && WidgetCatalog.isEnabled("vpn")
         repeat: true
         triggeredOnStart: true
         onTriggered: root.refresh()

@@ -5,7 +5,8 @@
 
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.services
+import qs.modules.ii.bar
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
