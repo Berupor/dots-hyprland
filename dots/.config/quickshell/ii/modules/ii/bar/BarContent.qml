@@ -194,6 +194,7 @@ Item { // Bar content region
                         Layout.alignment: Qt.AlignVCenter
                         source: modelData.resolve(modelData.slots.barIndicator)
                         visible: (item?.shown ?? true) && root.useShortenedForm < 2
+                        onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
                     }
                 }
 

@@ -27,6 +27,7 @@ Item {
                 required property var modelData
                 Layout.alignment: Qt.AlignVCenter
                 source: modelData.resolve(modelData.slots.barUtilButton)
+                onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
             }
         }
 

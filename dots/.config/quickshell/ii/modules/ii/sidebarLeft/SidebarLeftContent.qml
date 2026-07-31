@@ -94,7 +94,7 @@ Item {
                     ...root.catalogTabs.map(w => {
                         const c = Qt.createComponent(w.resolve(w.slots.sidebarLeftTab.path));
                         const o = c.createObject();
-                        if (!o) console.warn("[SidebarLeft] " + c.errorString());
+                        if (!o) ErrorReporter.report(w.widgetId, c.errorString());
                         return o;
                     }).filter(o => o),
                 ]

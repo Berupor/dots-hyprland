@@ -33,7 +33,7 @@ Singleton {
             const dir = Qt.resolvedUrl(folders.get(i, "fileName"))
             const component = Qt.createComponent(dir + "/Manifest.qml")
             if (component.status === Component.Error) {
-                console.warn("[WidgetCatalog] " + component.errorString())
+                ErrorReporter.report(folders.get(i, "fileName"), component.errorString())
                 continue
             }
             const manifest = component.createObject(root, { "dir": dir })

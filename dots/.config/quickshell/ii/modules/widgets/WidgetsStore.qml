@@ -25,6 +25,11 @@ Singleton {
         save()
     }
 
+    function setKey(key, value) {
+        root.data = Object.assign({}, data, { [key]: value })
+        save()
+    }
+
     function save() {
         fileView.setText(JSON.stringify(root.data, null, 2))
     }
