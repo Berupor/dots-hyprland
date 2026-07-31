@@ -2,6 +2,7 @@
 # Widget catalog smoke test against the live shell.
 # Flips enabled-set combos in widgets.json (no shell reload needed), counts new
 # log errors per combo. --broken also drops a corrupt widget in to prove isolation.
+# --static stops after the lints: no live shell, no writes, safe in a git hook.
 set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -28,6 +29,11 @@ hex=$(grep -rnE 'color:.*"#[0-9a-fA-F]{3,8}"' "$WDIR" | grep -v transparent)
 fonts=$(grep -rn "font.family:" "$WDIR" | grep -v "Appearance\.")
 [ -n "$hex" ] && { echo "design lint, hardcoded colors:"; echo "$hex"; FAIL=1; }
 [ -n "$fonts" ] && { echo "design lint, fonts outside Appearance:"; echo "$fonts"; FAIL=1; }
+
+if [ "${1:-}" = "--static" ]; then
+    [ "$FAIL" = 0 ] && echo "PASS static" || echo FAIL
+    exit "$FAIL"
+fi
 
 # --- save/restore ------------------------------------------------------------
 write_store() { # Atomic: FileView reads on the rename, never a partial file
