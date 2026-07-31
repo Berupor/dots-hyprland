@@ -5,18 +5,26 @@ import QtQuick
 
 /**
  * Widget failure reports, sent only with consent. widgets.json keys:
- * "errorReports": "ask" | "always" | "never", "errorReportsUrl": ntfy-style endpoint.
- * No url configured - nothing is ever sent.
+ * "errorReports": "ask" | "always" | "never"
+ * "errorReportsChannel": "ntfy" | "webhook" | "command"
+ * "errorReportsTarget": url for ntfy/webhook, shell command reading stdin for command.
+ * No target configured - nothing is ever sent.
  */
 Singleton {
     id: root
     property var reported: ({})
 
+    readonly property var channels: ({
+        "ntfy": `curl -sf -T - -H "Title: ii widget failed: $RW" "$RT"`,
+        "webhook": `jq -Rs '{widget: env.RW, report: .}' | curl -sf -X POST -H "Content-Type: application/json" -d @- "$RT"`,
+        "command": `$RT`
+    })
+
     function report(widgetId, message) {
         console.warn(`[ErrorReporter] ${widgetId}: ${message}`)
-        const url = WidgetsStore.data.errorReportsUrl ?? ""
+        const target = WidgetsStore.data.errorReportsTarget ?? ""
         const mode = WidgetsStore.data.errorReports ?? "ask"
-        if (url === "" || mode === "never")
+        if (target === "" || mode === "never")
             return
         const key = `${widgetId}\n${message}`
         if (root.reported[key])
@@ -33,7 +41,10 @@ Singleton {
 
     // Logs may carry window titles and the like, hence the explicit consent
     function send(widgetId, message) {
-        Quickshell.execDetached(["env", `RW=${widgetId}`, `RM=${message}`, `RU=${WidgetsStore.data.errorReportsUrl}`, "bash", "-c", `{ echo "widget: $RW"; echo "$RM"; echo; qs -c ii log 2>/dev/null | tail -100; } | curl -sf -T - -H "Title: ii widget failed: $RW" "$RU"`])
+        const pipe = root.channels[WidgetsStore.data.errorReportsChannel ?? "ntfy"]
+        if (pipe === undefined)
+            return
+        Quickshell.execDetached(["env", `RW=${widgetId}`, `RM=${message}`, `RT=${WidgetsStore.data.errorReportsTarget}`, "bash", "-c", `{ echo "widget: $RW"; echo "$RM"; echo; qs -c ii log 2>/dev/null | tail -100; } | ${pipe}`])
     }
 
     Process {
