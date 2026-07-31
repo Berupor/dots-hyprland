@@ -45,18 +45,16 @@ CircleUtilButton {
         Loader {
             id: menu
             active: false
-            property bool loadedVisible: active && item && item.visible
+            property bool loadedVisible: active && item
 
             function open(): void {
                 active = true;
             }
             function close(): void {
-                if (item)
-                    item.close();
+                active = false;
             }
 
             sourceComponent: VpnPopup {
-                Component.onCompleted: open()
                 anchor {
                     window: vpnButton.QsWindow.window
                     item: vpnButton
