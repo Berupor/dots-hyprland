@@ -23,6 +23,16 @@ For upstream's own feature list and screenshots, see
 </details>
 
 <details open>
+  <summary>Presence</summary>
+
+  - A room of friends: who's online, what they're playing (Spotify position
+    interpolated between syncs), shared photos.
+  - Lives in a left-sidebar tab and, optionally, as a card on the wallpaper.
+  - Client for [MAX1T1A/statusphere](https://github.com/MAX1T1A/statusphere): needs
+    `~/.local/bin/statusphere` and `~/.config/statusphere/config.json`.
+</details>
+
+<details open>
   <summary>Peripheral battery</summary>
 
   - Mice, keyboards, headsets, other Bluetooth things, in a right-sidebar panel.

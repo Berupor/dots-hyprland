@@ -1,0 +1,700 @@
+pragma Singleton
+pragma ComponentBehavior: Bound
+
+// Room presence, streamed from the `statusphere` cli (github.com/MAX1T1A/statusphere).
+
+import qs.services
+import qs.modules.common
+import qs.modules.common.functions
+import QtQuick
+import Quickshell
+import Quickshell.Io
+
+Singleton {
+    id: root
+
+    property bool binaryFound: false
+    property bool registered: false
+    property string selfAccountId: ""
+    property string selfDeviceId: ""
+    readonly property bool available: root.binaryFound && root.registered
+    readonly property bool enabled: Config.options.sidebar.statusphere.enable || Config.options.background.widgets.presence.enable
+    readonly property bool shouldRun: root.enabled && root.available
+
+    // Raw member maps from the last parsed line, flat and heterogeneous by design
+    property var members: []
+    // Each account's current shared photo, if any: { account_id, path, created_at, expires_at }
+    property var photos: []
+    property bool live: false
+    property string lastError: ""
+
+    // One entry per account_id: { id, name, role, offline, devices, primary }
+    readonly property var accountsById: {
+        const byId = {};
+        for (const m of root.members) {
+            const id = m.account_id || m.device_id || "";
+            if (!id)
+                continue;
+            if (!byId[id]) {
+                byId[id] = {
+                    "id": id,
+                    "name": "",
+                    "role": m._role || "member",
+                    "offline": true,
+                    "devices": []
+                };
+            }
+            const acc = byId[id];
+            if (m._role)
+                acc.role = m._role;
+            if (m._offline) {
+                if (m.account_name)
+                    acc.name = m.account_name;
+                continue;
+            }
+            acc.offline = false;
+            acc.devices.push(m);
+        }
+        for (const id in byId) {
+            const acc = byId[id];
+            const newest = acc.devices.reduce((max, d) => Math.max(max, d.last_seen ?? 0), 0);
+            acc.devices.sort((a, b) => root.compareDevices(a, b, newest));
+            acc.primary = acc.devices[0] ?? null;
+            // Each device publishes its own copy of the account name and they go stale apart,
+            // so read it off one fixed device instead of whichever the cli listed last.
+            acc.name = root.labelDevice(acc)?.account_name || acc.devices.find(d => d.account_name)?.account_name || acc.name;
+        }
+        return byId;
+    }
+
+    // The cli emits devices in random order, so rank them. Live devices differ by a jittery
+    // second of last_seen, so freshness only counts once one falls this far behind the newest.
+    readonly property int staleGap: 45
+
+    function deviceRank(device): int {
+        if (device.spotify_status === "playing" && !root.stalled(device))
+            return 0;
+        if (device.spotify_status)
+            return 1;
+        return 2;
+    }
+
+    // A client that keeps saying "playing" while its position sits still lost the Spotify Connect
+    // session to another device and never noticed, so watch the position advance per device.
+    readonly property int stallTimeout: 8000
+    property var progressByDevice: ({})
+
+    function noteProgress(members): void {
+        const now = Date.now();
+        const next = {};
+        for (const m of members) {
+            const id = m.device_id;
+            if (!id || m.spotify_status !== "playing")
+                continue;
+            const key = root.trackKey(m);
+            const pos = m.spotify_position ?? 0;
+            const prev = root.progressByDevice[id];
+            next[id] = (prev && prev.key === key && pos <= prev.pos) ? prev : {
+                "key": key,
+                "pos": pos,
+                "at": now
+            };
+        }
+        root.progressByDevice = next;
+    }
+
+    function stalled(device): bool {
+        const seen = root.progressByDevice[device?.device_id];
+        return !!seen && Date.now() - seen.at > root.stallTimeout;
+    }
+
+    function compareDevices(a, b, newest): int {
+        const behind = d => (newest - (d.last_seen ?? 0) > root.staleGap) ? 1 : 0;
+        const own = d => d.device_id === root.selfDeviceId ? 0 : 1;
+        return root.deviceRank(a) - root.deviceRank(b) || behind(a) - behind(b) || own(a) - own(b) || (a.device_id ?? "").localeCompare(b.device_id ?? "");
+    }
+
+    // One entry per account_id with a live share: { account_id, path, created_at, expires_at }
+    readonly property var photosByAccountId: {
+        const byId = {};
+        for (const p of root.photos) {
+            if (p.account_id)
+                byId[p.account_id] = p;
+        }
+        return byId;
+    }
+
+    // Ticks so currentPhotoFor's expiry check re-evaluates between stdout lines,
+    // not just when the roster/photo list itself changes.
+    property real _now: Date.now()
+
+    Timer {
+        interval: 30000
+        running: root.shouldRun || root.incognitoMode
+        repeat: true
+        onTriggered: root._now = Date.now()
+    }
+
+    // Incognito is the cli's own state, shared with its tui, so read the file instead
+    // of keeping a second copy of the truth here.
+    property bool incognitoMode: false
+    property bool incognitoAnnounce: true
+    property string incognitoNote: ""
+    property real incognitoUntil: 0
+    readonly property bool hiding: root.incognitoMode && (root.incognitoUntil === 0 || root._now < root.incognitoUntil)
+
+    FileView {
+        path: `${Directories.config}/statusphere/privacy.json`
+        printErrors: false // Missing until the first toggle, which is the normal state
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.readPrivacy(text())
+        onLoadFailed: root.readPrivacy("")
+    }
+
+    function readPrivacy(text: string): void {
+        try {
+            const privacy = JSON.parse(text);
+            const until = Date.parse(privacy.until ?? "");
+            root.incognitoMode = (privacy.mode ?? "normal") !== "normal";
+            root.incognitoAnnounce = privacy.announce !== false;
+            root.incognitoNote = privacy.note ?? "";
+            root.incognitoUntil = isNaN(until) ? 0 : until;
+        } catch (e) {
+            root.incognitoMode = false;
+            root.incognitoAnnounce = true;
+            root.incognitoNote = "";
+            root.incognitoUntil = 0;
+        }
+        root._now = Date.now();
+    }
+
+    function setIncognito(on: bool, minutes: int): void {
+        const arg = !on ? "off" : (minutes > 0 ? `${minutes}m` : "on");
+        incognitoProc.command = ["bash", "-c", `"$HOME/.local/bin/statusphere" --incognito ${arg}`];
+        incognitoProc.running = true;
+    }
+
+    Process {
+        id: incognitoProc
+    }
+
+    function incognitoLabel(): string {
+        if (!root.hiding)
+            return Translation.tr("Your room sees what you're up to");
+        if (root.incognitoNote)
+            return Translation.tr("Hidden · %1").arg(root.incognitoNote);
+        if (root.incognitoUntil > 0)
+            return Translation.tr("Hidden until %1").arg(Qt.formatTime(new Date(root.incognitoUntil), "HH:mm"));
+        return Translation.tr("Hidden from your room");
+    }
+
+    // A hidden card should still say something. The line is picked from the account id
+    // so it stays with the person instead of changing on every roster update.
+    readonly property var hiddenLines: [Translation.tr("off the radar"), Translation.tr("somewhere else"), Translation.tr("heads down"), Translation.tr("out of frame"), Translation.tr("keeping it quiet"), Translation.tr("doing something")]
+
+    function isSelf(account): bool {
+        return !!account?.id && account.id === root.selfAccountId;
+    }
+
+    // Your own row is the room's view of you, so it hides itself too - including when
+    // announce is off and the room is told nothing at all.
+    function hiddenFor(account): bool {
+        return account?.primary?._incognito === true || (root.hiding && root.isSelf(account));
+    }
+
+    function hiddenLineFor(account): string {
+        const note = account?.primary?._incognito_note ?? "";
+        if (note)
+            return note;
+        if (root.isSelf(account) && !root.incognitoAnnounce)
+            return Translation.tr("Nothing at all");
+        const id = account?.id ?? "";
+        let sum = 0;
+        for (let i = 0; i < id.length; i++) {
+            sum += id.charCodeAt(i);
+        }
+        return root.hiddenLines[sum % root.hiddenLines.length];
+    }
+
+    function currentPhotoFor(account): var {
+        const p = root.photosByAccountId[account?.id];
+        if (!p)
+            return null;
+        const expiresAt = Date.parse(p.expires_at);
+        if (isNaN(expiresAt) || root._now >= expiresAt)
+            return null;
+        return p;
+    }
+
+    readonly property var selfAccount: root.accountsById[root.selfAccountId] ?? null
+    readonly property bool canShare: root.available && Config.options.sidebar.statusphere.photo.share
+
+    // Sharing runs its own cli invocation: --post-photo is a plain http post that touches
+    // no local state, so it's safe next to the feed process.
+    property bool posting: false
+    property string lastPostError: ""
+
+    // The server re-encodes to 1600px anyway, so shrink here too and stay far from the cli's 8MiB cap.
+    readonly property string resizeArgs: "-resize '1600x1600>'"
+    readonly property string postTempPath: `${Directories.screenshotTemp}/statusphere-post.png`
+
+    function postPhoto(path: string): void {
+        if (!path)
+            return;
+        root.startPost(`magick '${StringUtils.shellSingleQuoteEscape(path)}' ${root.resizeArgs} png:'${root.postTempPath}'`);
+    }
+
+    // Source is the region selector's throwaway screenshot, so it goes away with the crop.
+    function postRegion(sourcePath: string, x: real, y: real, width: real, height: real): void {
+        const source = StringUtils.shellSingleQuoteEscape(sourcePath);
+        const crop = `-crop ${Math.round(width)}x${Math.round(height)}+${Math.round(x)}+${Math.round(y)} +repage`;
+        root.startPost(`magick '${source}' ${crop} ${root.resizeArgs} png:'${root.postTempPath}' && rm -f '${source}'`);
+    }
+
+    function startPost(prepareCommand: string): void {
+        if (!root.canShare || root.posting)
+            return;
+        root.lastPostError = "";
+        postProc.command = ["bash", "-c", `mkdir -p '${Directories.screenshotTemp}' && ${prepareCommand} && ` //
+            + `"$HOME/.local/bin/statusphere" --post-photo '${root.postTempPath}'; ` //
+            + `status=$?; rm -f '${root.postTempPath}'; exit $status`];
+        root.posting = true;
+        postProc.running = true;
+    }
+
+    function notifyPost(body: string): void {
+        Quickshell.execDetached(["notify-send", Translation.tr("Statusphere"), body, "-a", "Shell"]);
+    }
+
+    Process {
+        id: postProc
+        property string reply: ""
+        stdout: StdioCollector {
+            onStreamFinished: postProc.reply = text.trim()
+        }
+        stderr: StdioCollector {
+            onStreamFinished: root.lastPostError = text.trim()
+        }
+        onExited: exitCode => {
+            root.posting = false;
+            if (exitCode === 0) {
+                // "Shared. Visible to your room until <time>"
+                root.notifyPost(postProc.reply || Translation.tr("Photo shared with your room"));
+                return;
+            }
+            if (!root.lastPostError)
+                root.lastPostError = Translation.tr("Could not share the photo");
+            root.notifyPost(root.lastPostError);
+        }
+    }
+
+    // Rows look themselves up in accountsById; reassigning this makes the Repeater rebuild
+    // every delegate, so only do it when the roster itself changes.
+    property var accountIds: []
+
+    onAccountsByIdChanged: {
+        const ids = Object.keys(root.accountsById).sort((a, b) => {
+            const x = root.accountsById[a];
+            const y = root.accountsById[b];
+            if (x.offline !== y.offline)
+                return x.offline ? 1 : -1;
+            return root.nameFor(x).toLowerCase().localeCompare(root.nameFor(y).toLowerCase());
+        });
+        if (ids.length !== root.accountIds.length || ids.some((id, i) => id !== root.accountIds[i]))
+            root.accountIds = ids;
+    }
+
+    readonly property int memberCount: root.accountIds.length
+    readonly property int onlineCount: Object.values(root.accountsById).filter(a => !a.offline).length
+
+    // Machines, not people: a server card is read for its metrics. The kind sticks
+    // per account so an offline server stays a server instead of turning into a face.
+    property var kindById: ({})
+
+    function noteKinds(members): void {
+        const kinds = Object.assign({}, root.kindById);
+        let changed = false;
+        for (const m of members) {
+            const id = m.account_id ?? "";
+            if (id && m._kind && kinds[id] !== m._kind) {
+                kinds[id] = m._kind;
+                changed = true;
+            }
+        }
+        if (changed)
+            root.kindById = kinds;
+    }
+
+    function isServer(account): bool {
+        return (account?.primary?._kind ?? root.kindById[account?.id ?? ""] ?? "") === "server";
+    }
+
+    // The verdict is the machine's own, from ~/.config/statusphere/health.json there.
+    function healthFor(account): string {
+        return account?.primary?._health ?? "";
+    }
+
+    function healthNoteFor(account): string {
+        return account?.primary?._health_note ?? "";
+    }
+
+    readonly property var serverIds: root.accountIds.filter(id => root.isServer(root.accountsById[id]))
+
+    // A silent agent and a dead machine look the same from here, so say which one it is.
+    function offlineLineFor(account): string {
+        if (!root.isServer(account))
+            return Translation.tr("Offline");
+        return root.serverReachable ? Translation.tr("Not reporting") : Translation.tr("Host unreachable");
+    }
+
+    // The agent runs on the box it reports on, so it cannot report its own death.
+    // Asking the server directly is what tells a dead host from a dead feed.
+    property string selfServerUrl: ""
+    property bool serverReachable: true
+
+    Process {
+        id: healthProc
+        command: ["curl", "-sfm", "5", `${root.selfServerUrl}/health`]
+        onExited: exitCode => root.serverReachable = (exitCode === 0)
+    }
+
+    Timer {
+        interval: Config.options.sidebar.statusphere.server.pingSeconds * 1000
+        running: root.shouldRun && root.selfServerUrl !== "" && root.serverIds.length > 0
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: healthProc.running = true
+    }
+
+    // A device name is the last resort for the account label, so pick one that stays put when
+    // playback hops between devices - primary follows the music, this must not.
+    function labelDevice(account): var {
+        const devices = account?.devices ?? [];
+        return devices.find(d => d.device_id === root.selfDeviceId) ?? devices.slice().sort((a, b) => (a.device_id ?? "").localeCompare(b.device_id ?? ""))[0] ?? null;
+    }
+
+    function nameFor(account): string {
+        if (!account)
+            return "";
+        if (account.name)
+            return account.name;
+        return root.labelDevice(account)?.device_name || account.id.slice(0, 8);
+    }
+
+    function initialFor(account): string {
+        const name = root.nameFor(account);
+        return name ? name.charAt(0).toUpperCase() : "?";
+    }
+
+    function trackKey(device): string {
+        return device?.spotify_uri || device?.spotify_display || `${device?.spotify_track ?? ""}/${device?.spotify_artist ?? ""}`;
+    }
+
+    // Spotify Connect syncs one session across an account's devices, so they report the same
+    // track - keep one device per distinct track, playing ones first (devices come sorted).
+    function musicDevices(account): var {
+        const playing = (account?.devices ?? []).filter(d => d.spotify_status);
+        const live = playing.filter(d => !root.stalled(d));
+        const seen = new Set();
+        return (live.length > 0 ? live : playing).filter(d => {
+            const key = root.trackKey(d);
+            if (seen.has(key))
+                return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    function statusFor(account): string {
+        if (!account || account.offline)
+            return "";
+        if (root.hiddenFor(account))
+            return root.hiddenLineFor(account);
+        if (root.isServer(account))
+            return root.healthNoteFor(account) || Translation.tr("All good");
+        const playing = root.musicDevices(account);
+        if (playing.length > 1)
+            return Translation.tr("Listening on %1 devices").arg(playing.length);
+        const p = account.primary;
+        if (p?.active_window)
+            return p.active_window;
+        if (p?.active_app)
+            return p.active_app;
+        if (p?.spotify_status)
+            return "";
+        return Translation.tr("Online");
+    }
+
+    function deviceNameFor(device): string {
+        return device?.device_name || (device?.device_id ?? "").slice(0, 8);
+    }
+
+    function deviceStatusFor(device): string {
+        const what = device?.active_window || device?.active_app || Translation.tr("Online");
+        const name = root.deviceNameFor(device);
+        return name ? `${name} · ${what}` : what;
+    }
+
+    function trackFor(device): string {
+        if (!device?.spotify_status)
+            return "";
+        return device.spotify_display || `${device.spotify_track ?? ""} — ${device.spotify_artist ?? ""}`;
+    }
+
+    function weatherFor(account): string {
+        return account?.primary?.weather ?? "";
+    }
+
+    function canSync(device): bool {
+        return !!device?.spotify_uri && device.device_id !== root.selfDeviceId;
+    }
+
+    // Same mechanism as the TUI's sync action (client/internal/media/media.go): MPRIS OpenUri.
+    function syncSpotify(device): void {
+        const uri = device?.spotify_uri;
+        if (!uri)
+            return;
+        Quickshell.execDetached(["dbus-send", "--session", "--type=method_call", "--dest=org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player.OpenUri", `string:${uri}`]);
+    }
+
+    // "mem" ships as "used/total" text (eg. "21155M/31663M"), not a percentage, so
+    // derive its bar fill from the raw MB totals the device sends alongside it.
+    function percentForField(key, raw, device): var {
+        const direct = raw.match(/^(\d+(?:\.\d+)?)\s*%$/);
+        if (direct)
+            return parseFloat(direct[1]);
+        if ((key === "mem" || key === "ram" || key === "memory") && device.memory_total_mb > 0)
+            return device.memory_used_mb / device.memory_total_mb * 100;
+        return null;
+    }
+
+    function iconForField(key): string {
+        switch (key) {
+        case "cpu":
+            return "planner_review";
+        case "mem":
+        case "ram":
+        case "memory":
+            return "memory";
+        case "disk":
+            return "storage";
+        case "gpu":
+            return "deployed_code";
+        default:
+            return "monitoring";
+        }
+    }
+
+    function formatUptime(hours): string {
+        if (hours < 1)
+            return Translation.tr("%1m").arg(Math.round(hours * 60));
+        if (hours < 48)
+            return Translation.tr("%1h").arg(Math.round(hours));
+        return Translation.tr("%1d").arg(Math.round(hours / 24));
+    }
+
+    // Metrics the cli collects itself, so custom.json does not have to shell out
+    // for them. A custom field of the same name loses to these.
+    readonly property var nativeFieldKeys: ["cpu", "mem", "ram", "memory", "disk"]
+
+    function systemFieldsFor(device): var {
+        const fields = [];
+        if (device?.cpu_percent !== undefined)
+            fields.push({
+                "key": "cpu",
+                "icon": "planner_review",
+                "label": Translation.tr("CPU"),
+                "value": `${Math.round(device.cpu_percent)}%`,
+                "percent": device.cpu_percent
+            });
+        if (device?.memory_total_mb > 0) {
+            const percent = device.memory_used_mb / device.memory_total_mb * 100;
+            fields.push({
+                "key": "mem",
+                "icon": "memory",
+                "label": Translation.tr("Memory"),
+                "value": `${(device.memory_used_mb / 1024).toFixed(1)}/${(device.memory_total_mb / 1024).toFixed(1)}G`,
+                "percent": percent
+            });
+        }
+        if (device?.disk_used_percent !== undefined)
+            fields.push({
+                "key": "disk",
+                "icon": "storage",
+                "label": device.disk_free_gb !== undefined ? Translation.tr("Disk · %1G free").arg(Math.round(device.disk_free_gb)) : Translation.tr("Disk"),
+                "value": `${Math.round(device.disk_used_percent)}%`,
+                "percent": device.disk_used_percent
+            });
+        if (device?.load_avg_1m !== undefined)
+            fields.push({
+                "key": "load",
+                "icon": "speed",
+                "label": Translation.tr("Load"),
+                "value": device.cpu_count > 0 ? `${device.load_avg_1m.toFixed(2)} / ${device.cpu_count}` : device.load_avg_1m.toFixed(2),
+                "percent": null
+            });
+        if (device?.uptime_hours !== undefined)
+            fields.push({
+                "key": "uptime",
+                "icon": "schedule",
+                "label": Translation.tr("Uptime"),
+                "value": root.formatUptime(device.uptime_hours),
+                "percent": null
+            });
+        return fields;
+    }
+
+    // Structured for the right-click detail card: percentage fields become
+    // { percent }, everything else (workspace, weather, uptime) stays text-only.
+    function detailFieldsFor(account): var {
+        if (!account || account.offline)
+            return [];
+        const p = account.primary;
+        const fields = root.systemFieldsFor(p);
+        if (p?.active_workspace)
+            fields.push({
+                "key": "workspace",
+                "icon": "desktop_windows",
+                "label": Translation.tr("Workspace"),
+                "value": String(p.active_workspace),
+                "percent": null
+            });
+        if (root.weatherFor(account))
+            fields.push({
+                "key": "weather",
+                "icon": "sunny",
+                "label": Translation.tr("Weather"),
+                "value": root.weatherFor(account),
+                "percent": null
+            });
+        for (const key of (p?.custom_fields ?? [])) {
+            if (key === "weather" || !p[key] || root.nativeFieldKeys.includes(key))
+                continue;
+            const raw = String(p[key]);
+            fields.push({
+                "key": key,
+                "icon": root.iconForField(key),
+                "label": key,
+                "value": raw,
+                "percent": root.percentForField(key, raw, p)
+            });
+        }
+        return fields;
+    }
+
+    function placeholderText(): string {
+        if (!root.binaryFound)
+            return Translation.tr("statusphere cli not found in ~/.local/bin");
+        if (!root.registered)
+            return Translation.tr("No statusphere account registered");
+        if (!root.live)
+            return root.lastError || Translation.tr("Connecting…");
+        return Translation.tr("Nobody else around yet");
+    }
+
+    function ingest(line: string): void {
+        const text = line.trim();
+        if (!text)
+            return;
+        try {
+            const data = JSON.parse(text);
+            root.noteProgress(data.members ?? []);
+            root.noteKinds(data.members ?? []);
+            root.members = data.members ?? [];
+            root.photos = data.photos ?? [];
+            root.live = true;
+            root.retryDelay = root.retryMin;
+        } catch (e) {
+            // Ignore malformed lines, keep the last good roster
+        }
+    }
+
+    Process {
+        running: true
+        command: ["bash", "-c", "command -v \"$HOME/.local/bin/statusphere\" >/dev/null 2>&1"]
+        onExited: exitCode => root.binaryFound = (exitCode === 0)
+    }
+
+    Process {
+        running: true
+        command: ["bash", "-c", "test -s \"${XDG_CONFIG_HOME:-$HOME/.config}/statusphere/config.json\""]
+        onExited: exitCode => root.registered = (exitCode === 0)
+    }
+
+    Process {
+        running: true
+        command: ["bash", "-c", "cat \"${XDG_CONFIG_HOME:-$HOME/.config}/statusphere/config.json\" 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const config = JSON.parse(text);
+                    root.selfAccountId = config.account_id ?? "";
+                    root.selfDeviceId = config.device_id ?? "";
+                    root.selfServerUrl = (config.server_url ?? "").replace(/\/+$/, "");
+                } catch (e) {
+                    root.selfAccountId = "";
+                    root.selfDeviceId = "";
+                    root.selfServerUrl = "";
+                }
+            }
+        }
+    }
+
+    readonly property int retryMin: 2000
+    readonly property int retryMax: 120000
+    property int retryDelay: root.retryMin
+    property bool wantRunning: false
+
+    onShouldRunChanged: {
+        restartTimer.stop();
+        root.retryDelay = root.retryMin;
+        root.wantRunning = root.shouldRun;
+    }
+
+    Timer {
+        id: restartTimer
+        interval: root.retryDelay
+        onTriggered: root.wantRunning = true
+    }
+
+    // A heartbeat gap much bigger than its interval means the system was asleep - the feed's
+    // connection is likely stale even if it hasn't noticed, so force a reconnect.
+    readonly property int heartbeatInterval: 20000
+    readonly property int suspendGap: 60000
+    property real _lastHeartbeat: 0
+
+    Timer {
+        interval: root.heartbeatInterval
+        running: root.shouldRun
+        repeat: true
+        onTriggered: {
+            const now = Date.now();
+            if (root._lastHeartbeat && now - root._lastHeartbeat > root.suspendGap)
+                root.wantRunning = false;
+            root._lastHeartbeat = now;
+        }
+    }
+
+    Process {
+        id: feed
+        running: root.shouldRun && root.wantRunning
+        command: ["bash", "-c", "exec \"$HOME/.local/bin/statusphere\" --ui json"]
+        stdout: SplitParser {
+            onRead: line => root.ingest(line)
+        }
+        stderr: SplitParser {
+            onRead: line => root.lastError = line
+        }
+        onExited: (exitCode, exitStatus) => {
+            root.live = false;
+            root.members = [];
+            root.photos = [];
+            root.wantRunning = false;
+            if (root.shouldRun) {
+                root.retryDelay = Math.min(root.retryMax, root.retryDelay * 2);
+                restartTimer.restart();
+            }
+        }
+    }
+}

@@ -203,6 +203,15 @@ Singleton {
                             property string text: ""
                         }
                     }
+                    property JsonObject presence: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 100
+                        property real y: 500
+                        property real width: 360
+                        property bool hideOffline: false
+                        property int maxRows: 0 // 0 for everyone
+                    }
                     property JsonObject weather: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
@@ -241,6 +250,9 @@ Singleton {
                 property bool showBackground: true
                 property bool verbose: true
                 property bool vertical: false
+                property JsonObject statusphere: JsonObject {
+                    property bool incognitoIndicator: true // Hidden anyway unless you're hiding
+                }
                 property JsonObject resources: JsonObject {
                     property bool showMemory: true
                     property bool showSwap: true
@@ -525,6 +537,23 @@ Singleton {
                     property bool visualize: false
                     property bool clicklessCornerEnd: true
                     property int clicklessCornerVerticalOffset: 1
+                }
+
+                property JsonObject statusphere: JsonObject {
+                    property bool enable: true
+                    property JsonObject incognito: JsonObject {
+                        property bool enable: true // Hold your own row to pick how long
+                    }
+                    property JsonObject server: JsonObject {
+                        property bool showMetrics: true // Machines carry no window title, so show the numbers instead
+                        property int pingSeconds: 60 // An agent can't report its own death, so ask the server too
+                    }
+                    property JsonObject photo: JsonObject {
+                        property bool enable: true
+                        property bool share: true
+                        property int minHeight: 100
+                        property int maxHeight: 320
+                    }
                 }
 
                 property JsonObject quickToggles: JsonObject {
