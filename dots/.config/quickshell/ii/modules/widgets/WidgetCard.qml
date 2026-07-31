@@ -20,7 +20,9 @@ Rectangle {
         "barUtilButton": Translation.tr("Bar button"),
         "barIndicator": Translation.tr("Bar indicator"),
         "sidebarLeftTab": Translation.tr("Left sidebar"),
-        "sidebarRightTab": Translation.tr("Right sidebar")
+        "sidebarRightTab": Translation.tr("Right sidebar"),
+        "catalogView": Translation.tr("This page"),
+        "settingsView": Translation.tr("Settings window")
     })
     readonly property var placements: Object.keys(root.manifest.slots).map(s => root.slotNames[s] ?? s)
 
@@ -205,15 +207,23 @@ Rectangle {
                     delegate: Loader {
                         id: optLoader
                         required property var modelData
+                        readonly property Component control: {
+                            switch (modelData.type) {
+                            case "switch": return switchOption;
+                            case "spinBox": return spinOption;
+                            }
+                            return null;
+                        }
                         Layout.fillWidth: true
-                        sourceComponent: modelData.type === "spinBox" ? spinOption : switchOption
+                        sourceComponent: control
+                        Component.onCompleted: if (!control) ErrorReporter.report(root.manifest.widgetId, `Unknown option type "${modelData.type}" for "${modelData.key}"`)
 
                         Component {
                             id: switchOption
                             ConfigSwitch {
                                 buttonIcon: optLoader.modelData.icon ?? ""
                                 text: optLoader.modelData.label
-                                checked: WidgetCatalog.option(root.manifest.widgetId, optLoader.modelData.key) ?? false
+                                checked: root.manifest.optionValue(optLoader.modelData.key) ?? false
                                 onCheckedChanged: WidgetsStore.setOption(root.manifest.widgetId, optLoader.modelData.key, checked)
                             }
                         }
@@ -222,7 +232,7 @@ Rectangle {
                             ConfigSpinBox {
                                 icon: optLoader.modelData.icon ?? ""
                                 text: optLoader.modelData.label
-                                value: WidgetCatalog.option(root.manifest.widgetId, optLoader.modelData.key) ?? 0
+                                value: root.manifest.optionValue(optLoader.modelData.key) ?? 0
                                 from: optLoader.modelData.min ?? 0
                                 to: optLoader.modelData.max ?? 100
                                 stepSize: optLoader.modelData.step ?? 1
