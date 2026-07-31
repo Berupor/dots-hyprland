@@ -31,10 +31,7 @@ Singleton {
     }
 
     function option(widgetId, key) {
-        const stored = WidgetsStore.data.options?.[widgetId]?.[key]
-        if (stored !== undefined) return stored
-        const manifest = widgets.find(w => w.widgetId === widgetId)
-        return manifest?.options.find(o => o.key === key)?.default
+        return widgets.find(w => w.widgetId === widgetId)?.optionValue(key)
     }
 
     function scan() {

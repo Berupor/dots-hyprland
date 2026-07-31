@@ -8,11 +8,14 @@ WidgetManifest {
     icon: "battery_android_full"
     options: [
         { "key": "showAll", "type": "switch", "icon": "devices_other", "label": Translation.tr("Every device, not just the emptiest one"), "default": true },
+        { "key": "barIndicator", "type": "switch", "icon": "toolbar", "label": Translation.tr("Indicator in the top bar"), "default": true },
         { "key": "sidebarTab", "type": "switch", "icon": "dock_to_left", "label": Translation.tr("Tab in the right sidebar"), "default": true }
     ]
     slots: {
-        const s = { "barIndicator": "PeripheralBatteryIndicator.qml" };
-        if (WidgetsStore.data.options?.peripheralBattery?.sidebarTab ?? true)
+        const s = {};
+        if (optionValue("barIndicator"))
+            s.barIndicator = "PeripheralBatteryIndicator.qml";
+        if (optionValue("sidebarTab"))
             s.sidebarRightTab = { "name": Translation.tr("Devices"), "icon": "battery_android_full", "path": "PeripheralBatteryTab.qml" };
         return s;
     }

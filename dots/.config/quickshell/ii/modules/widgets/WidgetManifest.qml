@@ -8,7 +8,8 @@ import Quickshell.Io
  *    Service singletons go flat into modules/widgets/ (dynamically loaded
  *    files resolve `import qs.modules.widgets`, but not subdir modules)
  * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`
- * 3. Declare options with defaults, read them via WidgetCatalog.option(id, key)
+ * 3. Declare options with defaults, read them via WidgetCatalog.option(id, key), or
+ *    optionValue(key) from the manifest itself. Never re-state a default elsewhere
  * 4. List required binaries in `dependencies`
  * 5. `settingsPage` renders inside the widget's card on the Widgets page: group with
  *    ContentSubsection, ContentSection is the host's altitude
@@ -38,6 +39,12 @@ QtObject {
 
     function resolve(rel) {
         return `${dir}/${rel}`
+    }
+
+    /// Stored option value, or the schema default. The only place a default is read
+    function optionValue(key) {
+        const stored = WidgetsStore.data.options?.[root.widgetId]?.[key]
+        return stored !== undefined ? stored : root.options.find(o => o.key === key)?.default
     }
 
     property Process depsCheck: Process {
