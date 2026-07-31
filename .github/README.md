@@ -4,60 +4,50 @@ same installer, same keybinds, same [wiki](https://ii.clsty.link/en/ii-qs/01setu
 For upstream's own feature list and screenshots, see
 [its README](https://github.com/end-4/dots-hyprland/blob/main/.github/README.md).
 
+What the fork tries to add is an extension system for these dots: each widget lives
+in its own folder, gets discovered automatically, and is picked per machine on a
+settings page. Work in progress, expect rough edges.
+
 ## Branches
 
 | Branch | What it is |
 | --- | --- |
-| `berupor` | Default. Upstream plus the changes below. |
+| `extensions` | Default. Upstream plus the widget catalog. |
 | `main` | Untouched mirror of `end-4/main`, kept only to merge from. |
 
-## On top of upstream
+## Widgets
+
+All widgets ship disabled. The settings app has a Widgets page that lists them with
+their options; widgets with missing dependencies say so instead of turning into dead
+buttons. Picks are saved to `~/.config/illogical-impulse/widgets.json`, which nothing
+else touches.
 
 <details open>
-  <summary>Bar</summary>
+  <summary>In the catalog</summary>
 
-  - **Resources**: GPU circle next to CPU/RAM, popup columns for GPU and for CPU
-    iowait/temperature. Per-indicator toggles and thresholds in settings.
-  - Even spacing around the media and clock modules; center-side modules grow when
-    the content doesn't fit.
+  - **GPU monitor**: usage circle next to CPU/RAM, popup columns for load, VRAM and
+    temperature.
+  - **Peripheral battery**: mice, keyboards, headsets and other bluetooth things, in
+    the bar and a right-sidebar tab.
+  - **Android webcam**: indicator for a phone attached as a USB webcam.
+  - **Presence**: a room of friends - who's online, what they're playing, shared
+    photos. Client for statusphere; hidden without the cli.
 </details>
 
-<details open>
-  <summary>Presence</summary>
+<details>
+  <summary>Not widgets, just patches</summary>
 
-  - A room of friends: who's online, what they're playing (Spotify position
-    interpolated between syncs), shared photos.
-  - Lives in a left-sidebar tab and, optionally, as a card on the wallpaper.
-  - Client for [MAX1T1A/statusphere](https://github.com/MAX1T1A/statusphere): needs
-    `~/.local/bin/statusphere` and `~/.config/statusphere/config.json`.
-</details>
-
-<details open>
-  <summary>Peripheral battery</summary>
-
-  - Mice, keyboards, headsets, other Bluetooth things, in a right-sidebar panel.
-</details>
-
-<details open>
-  <summary>Lock screen</summary>
-
-  - Opaque surface with its own blurred wallpaper, no window flash on resume.
-  - Fingerprint re-arms after an unrecognized read.
-</details>
-
-<details open>
-  <summary>Misc</summary>
-
+  - Lock screen: opaque surface with its own blurred wallpaper, no window flash on
+    resume; fingerprint re-arms after an unrecognized read.
+  - Even spacing around the bar media and clock modules.
   - Screenshot annotation defaults to `satty`.
 </details>
 
-Every widget is a flag in `modules/common/Config.qml` with a switch in the settings
-app, like the upstream ones. Widgets with external dependencies stay hidden when the
-dependency is missing, so nothing turns into a dead button.
+A widget is one folder under `dots/.config/quickshell/ii/modules/widgets/<id>/` with
+a `Manifest.qml`; no shared files to edit. The contract is written down in
+`modules/widgets/WidgetManifest.qml`.
 
 ## Install
-
-A clone lands on `berupor`:
 
 ```sh
 git clone https://github.com/Berupor/dots-hyprland.git
@@ -78,6 +68,18 @@ cp -r dots/.config/quickshell/ii ~/.config/quickshell/
 ```
 
 `./setup install-files` sits in between: all the config files, no packages.
+
+## The way back
+
+Didn't like it? The same clone carries the untouched upstream shell:
+
+```sh
+git checkout main
+cp -r dots/.config/quickshell/ii ~/.config/quickshell/
+rm ~/.config/illogical-impulse/widgets.json   # optional, forgets the widget picks
+```
+
+Your `config.json` survives either direction.
 
 ## Pulling upstream
 
