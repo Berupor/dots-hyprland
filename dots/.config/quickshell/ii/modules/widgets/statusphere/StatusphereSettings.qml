@@ -8,6 +8,8 @@ import qs.modules.widgets
 ColumnLayout {
 
     function setOption(key, value) {
+        if (Statusphere.opt(key) === value) // Controls write back their own value on load
+            return;
         WidgetsStore.setOption("statusphere", key, value);
     }
 
@@ -18,7 +20,7 @@ ColumnLayout {
             buttonIcon: "touch_app"
             text: Translation.tr('Hold your own row to hide')
             checked: Statusphere.opt("incognito")
-            onClicked: setOption("incognito", !checked)
+            onCheckedChanged: setOption("incognito", checked)
             StyledToolTip {
                 text: Translation.tr("Hold your avatar in the presence tab, slide onto how long, let go.\nHides what you have open; music keeps playing.\nWhat's hidden never leaves this machine, so it stays out of the server's history too")
             }
@@ -28,7 +30,7 @@ ColumnLayout {
             buttonIcon: "toast"
             text: Translation.tr('Remind me in the bar')
             checked: Statusphere.opt("incognitoIndicator")
-            onClicked: setOption("incognitoIndicator", !checked)
+            onCheckedChanged: setOption("incognitoIndicator", checked)
             StyledToolTip {
                 text: Translation.tr("An icon while you're hiding, so you don't stay dark for a week by accident.\nClick it to be visible again")
             }
@@ -42,7 +44,7 @@ ColumnLayout {
             buttonIcon: "monitoring"
             text: Translation.tr('Metrics on the card')
             checked: Statusphere.opt("serverMetrics")
-            onClicked: setOption("serverMetrics", !checked)
+            onCheckedChanged: setOption("serverMetrics", checked)
             StyledToolTip {
                 text: Translation.tr("A machine has no window title, so its card shows cpu, memory, disk and load instead.\nThe verdict next to the name comes from that machine's own ~/.config/statusphere/health.json")
             }
@@ -71,7 +73,7 @@ ColumnLayout {
             buttonIcon: "check"
             text: Translation.tr('Friends\' shared photos')
             checked: Statusphere.opt("photos")
-            onClicked: setOption("photos", !checked)
+            onCheckedChanged: setOption("photos", checked)
             StyledToolTip {
                 text: Translation.tr("Shows a room member's current shared photo below their row")
             }
@@ -107,7 +109,7 @@ ColumnLayout {
             buttonIcon: "add_a_photo"
             text: Translation.tr('Share photos yourself')
             checked: Statusphere.opt("photoShare")
-            onClicked: setOption("photoShare", !checked)
+            onCheckedChanged: setOption("photoShare", checked)
             StyledToolTip {
                 text: Translation.tr("Middle-click your own card for share actions.\nMiddle-drag in the region selector shares that region right away")
             }
@@ -125,7 +127,7 @@ ColumnLayout {
                 buttonIcon: "check"
                 text: Translation.tr("Enable")
                 checked: Statusphere.opt("wallpaperCard")
-                onClicked: setOption("wallpaperCard", !checked)
+                onCheckedChanged: setOption("wallpaperCard", checked)
                 StyledToolTip {
                     text: Translation.tr("Same rows as the left sidebar's presence tab, as a card on the wallpaper.\nNeeds the statusphere cli and a registered account")
                 }
@@ -163,7 +165,7 @@ ColumnLayout {
             buttonIcon: "person_off"
             text: Translation.tr("Hide offline members")
             checked: Statusphere.opt("wallpaperHideOffline")
-            onClicked: setOption("wallpaperHideOffline", !checked)
+            onCheckedChanged: setOption("wallpaperHideOffline", checked)
         }
 
         ConfigSpinBox {
