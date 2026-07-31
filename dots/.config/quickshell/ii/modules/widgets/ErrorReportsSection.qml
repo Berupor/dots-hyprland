@@ -57,64 +57,60 @@ ContentSection {
 
     ColumnLayout {
         Layout.fillWidth: true
-        Layout.topMargin: 10
+        Layout.topMargin: 8
         spacing: 4
 
         ContentSubsectionLabel {
             text: Translation.tr("Where they go")
         }
 
-        RowLayout {
+        MaterialTextArea {
+            id: targetField
             Layout.fillWidth: true
-            spacing: 10
-
-            MaterialTextArea {
-                id: targetField
-                Layout.fillWidth: true
-                placeholderText: Translation.tr("URL that takes a POST")
-                text: section.target
-                wrapMode: TextEdit.WrapAnywhere // A URL has nowhere to break by words
-                onTextChanged: {
-                    ErrorReporter.testState = ErrorReporter.TestState.Idle;
-                    commitTarget.restart();
-                }
-
-                Timer {
-                    id: commitTarget
-                    interval: 400 // Every keystroke would rewrite widgets.json
-                    onTriggered: WidgetsStore.setKey("errorReportsTarget", targetField.text.trim())
-                }
+            placeholderText: Translation.tr("URL that takes a POST")
+            text: section.target
+            wrapMode: TextEdit.WrapAnywhere // A URL has nowhere to break by words
+            onTextChanged: {
+                ErrorReporter.testState = ErrorReporter.TestState.Idle;
+                commitTarget.restart();
             }
 
-            RippleButtonWithIcon {
-                Layout.alignment: Qt.AlignVCenter
-                buttonRadius: Appearance.rounding.full
-                enabled: section.target !== "" && ErrorReporter.testState !== ErrorReporter.TestState.Sending
-                materialIcon: {
-                    switch (ErrorReporter.testState) {
-                    case ErrorReporter.TestState.Sent:
-                        return "check";
-                    case ErrorReporter.TestState.Failed:
-                        return "error";
-                    }
-                    return "outgoing_mail";
-                }
-                mainText: {
-                    switch (ErrorReporter.testState) {
-                    case ErrorReporter.TestState.Sending:
-                        return Translation.tr("Sending...");
-                    case ErrorReporter.TestState.Sent:
-                        return Translation.tr("Sent");
-                    case ErrorReporter.TestState.Failed:
-                        return Translation.tr("Failed");
-                    }
-                    return Translation.tr("Send test");
-                }
-                onClicked: ErrorReporter.test()
+            Timer {
+                id: commitTarget
+                interval: 400 // Every keystroke would rewrite widgets.json
+                onTriggered: WidgetsStore.setKey("errorReportsTarget", targetField.text.trim())
+            }
+        }
 
-                StyledToolTip {
-                    text: Translation.tr("Sends one report as a broken widget would")
+        RippleButtonWithIcon {
+            Layout.alignment: Qt.AlignRight
+            Layout.topMargin: 4
+            buttonRadius: Appearance.rounding.small
+            enabled: section.target !== "" && ErrorReporter.testState !== ErrorReporter.TestState.Sending
+            materialIcon: {
+                switch (ErrorReporter.testState) {
+                case ErrorReporter.TestState.Sent:
+                    return "check";
+                case ErrorReporter.TestState.Failed:
+                    return "error";
                 }
+                return "outgoing_mail";
+            }
+            mainText: {
+                switch (ErrorReporter.testState) {
+                case ErrorReporter.TestState.Sending:
+                    return Translation.tr("Sending...");
+                case ErrorReporter.TestState.Sent:
+                    return Translation.tr("Sent");
+                case ErrorReporter.TestState.Failed:
+                    return Translation.tr("Failed");
+                }
+                return Translation.tr("Send test");
+            }
+            onClicked: ErrorReporter.test()
+
+            StyledToolTip {
+                text: Translation.tr("Sends one report as a broken widget would")
             }
         }
     }
