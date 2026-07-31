@@ -1,6 +1,7 @@
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -16,12 +17,12 @@ Item {
     property bool translatorEnabled: Config.options.sidebar.translator.enable
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
-    property bool presenceEnabled: Config.options.sidebar.statusphere.enable && Statusphere.available
+    property var catalogTabs: WidgetCatalog.forSlot("sidebarLeftTab")
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : []),
-        ...(root.presenceEnabled ? [{"icon": "groups", "name": Translation.tr("Room")}] : [])
+        ...root.catalogTabs.map(w => ({"icon": w.slots.sidebarLeftTab.icon, "name": w.slots.sidebarLeftTab.name}))
     ]
     property int tabCount: swipeView.count
 
@@ -88,9 +89,14 @@ Item {
                 contentChildren: [
                     ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && !root.presenceEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
+                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.catalogTabs.length === 0 && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
-                    ...(root.presenceEnabled ? [presence.createObject()] : []),
+                    ...root.catalogTabs.map(w => {
+                        const c = Qt.createComponent(w.resolve(w.slots.sidebarLeftTab.path));
+                        const o = c.createObject();
+                        if (!o) console.warn("[SidebarLeft] " + c.errorString());
+                        return o;
+                    }).filter(o => o),
                 ]
             }
         }
@@ -106,10 +112,6 @@ Item {
         Component {
             id: anime
             Anime {}
-        }
-        Component {
-            id: presence
-            Presence {}
         }
         Component {
             id: placeholder
