@@ -1,5 +1,5 @@
-import qs.modules.common
-import qs.services
+import qs.modules.ii.bar
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Layouts
 
@@ -12,7 +12,7 @@ Resource {
     // A cube reads as 3d/graphics; developer_board and memory_alt read as a ram chip
     iconName: "deployed_code"
     percentage: GpuStatus.usage
-    shown: GpuStatus.available && Config.options.bar.resources.showGpu
-    warning: GpuStatus.temp >= Config.options.bar.resources.gpuHotTemp
+    shown: GpuStatus.available && WidgetCatalog.isEnabled("gpu")
+    warning: GpuStatus.temp >= (WidgetCatalog.option("gpu", "hotTemp") ?? 95)
     Layout.leftMargin: root.shown ? 6 : 0
 }

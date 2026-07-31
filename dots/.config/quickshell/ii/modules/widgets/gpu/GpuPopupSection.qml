@@ -1,5 +1,7 @@
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.ii.bar
+import qs.modules.widgets
 import qs.services
 import QtQuick
 import QtQuick.Layouts
@@ -10,7 +12,7 @@ import QtQuick.Layouts
 Column {
     id: root
 
-    visible: GpuStatus.available && Config.options.bar.resources.showGpu
+    visible: GpuStatus.available && WidgetCatalog.isEnabled("gpu")
     anchors.top: parent.top
     spacing: 8
 

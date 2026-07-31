@@ -57,17 +57,6 @@ ContentPage {
                     }
                 }
 
-                ConfigSwitch {
-                    buttonIcon: "deployed_code"
-                    text: Translation.tr("GPU")
-                    checked: Config.options.bar.resources.showGpu
-                    onCheckedChanged: {
-                        Config.options.bar.resources.showGpu = checked;
-                    }
-                    StyledToolTip {
-                        text: GpuStatus.available ? Translation.tr("Load, VRAM and temperature") : Translation.tr("No supported GPU found")
-                    }
-                }
             }
 
             ContentSubsection {
@@ -135,17 +124,6 @@ ContentPage {
                 }
             }
 
-            ConfigSpinBox {
-                icon: "thermostat"
-                text: Translation.tr("GPU temperature (°C)")
-                value: Config.options.bar.resources.gpuHotTemp
-                from: 40
-                to: 120
-                stepSize: 5
-                onValueChanged: {
-                    Config.options.bar.resources.gpuHotTemp = value;
-                }
-            }
         }
     }
 

@@ -1,4 +1,5 @@
 import qs.modules.common
+import qs.modules.widgets.gpu
 import qs.services
 import QtQuick
 import QtQuick.Layouts
