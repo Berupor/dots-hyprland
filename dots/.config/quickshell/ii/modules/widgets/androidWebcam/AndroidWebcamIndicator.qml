@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.services
+import qs.modules.widgets
 import QtQuick
 import QtQuick.Layouts
 
@@ -10,7 +10,8 @@ import QtQuick.Layouts
 MouseArea {
     id: root
 
-    visible: AndroidWebcam.active
+    property bool shown: AndroidWebcam.active
+    visible: shown
     implicitWidth: visible ? icon.implicitWidth : 0
     implicitHeight: Appearance.sizes.barHeight
     hoverEnabled: !Config.options.bar.tooltips.clickToShow

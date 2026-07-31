@@ -6,7 +6,6 @@ pragma ComponentBehavior: Bound
 // Host-side detection only: the kernel names such a node "<model>: Android Webcam".
 // No adb, no helper daemon - without a phone there is simply no node.
 
-import qs.modules.common
 import Quickshell
 import Quickshell.Io
 import QtQuick
@@ -14,7 +13,7 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property bool enabled: Config.options.bar.androidWebcam.enable
+    readonly property bool enabled: WidgetCatalog.isEnabled("androidWebcam")
 
     // [{ path: "/dev/video0", model: "Pixel 6 Pro" }, ...]
     property var devices: []

@@ -202,11 +202,6 @@ Item { // Bar content region
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                AndroidWebcamIndicator {
-                    visible: (Config.options.bar.androidWebcam.enable && AndroidWebcam.active && root.useShortenedForm < 2)
-                    Layout.alignment: Qt.AlignVCenter
-                }
-
                 BatteryIndicator {
                     visible: (root.useShortenedForm < 2 && Battery.available)
                     Layout.alignment: Qt.AlignVCenter
