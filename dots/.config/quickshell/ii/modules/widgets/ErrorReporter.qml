@@ -6,7 +6,7 @@ import QtQuick
 /**
  * Widget failure reports, sent only with consent. widgets.json keys:
  * "errorReports": "ask" | "always" | "never"
- * "errorReportsChannel": "ntfy" | "webhook" | "command"
+ * "errorReportsChannel": "webhook" (default, the only one the settings page offers) | "ntfy" | "command"
  * "errorReportsTarget": url for ntfy/webhook, shell command reading stdin for command.
  * No target configured - nothing is ever sent.
  */
@@ -60,7 +60,7 @@ Singleton {
 
     // Logs may carry window titles and the like, hence the explicit consent
     function argv(widgetId, message) {
-        const pipe = root.channels[WidgetsStore.data.errorReportsChannel ?? "ntfy"]
+        const pipe = root.channels[WidgetsStore.data.errorReportsChannel ?? "webhook"]
         if (pipe === undefined)
             return null
         return ["env", `RW=${widgetId}`, `RM=${message}`, `RT=${WidgetsStore.data.errorReportsTarget}`, "bash", "-c", `{ echo "widget: $RW"; echo "$RM"; echo; qs -c ii log 2>/dev/null | tail -100; } | ${pipe}`]

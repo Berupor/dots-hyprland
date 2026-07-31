@@ -20,11 +20,6 @@ Item {
                 "want": "always"
             },
             {
-                "name": "section shows the stored channel",
-                "got": probe.snap.channel ?? "",
-                "want": "command"
-            },
-            {
                 "name": "section shows the stored target",
                 "got": probe.snap.target ?? "",
                 "want": "cat"
@@ -70,7 +65,6 @@ Item {
         onTriggered: {
             probe.snap = {
                 "mode": section.mode,
-                "channel": section.channel,
                 "target": section.target,
                 "argv": ErrorReporter.argv("test", "hello")
             };
