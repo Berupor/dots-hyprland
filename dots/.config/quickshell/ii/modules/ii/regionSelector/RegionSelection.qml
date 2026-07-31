@@ -29,7 +29,7 @@ PanelWindow {
 
     // Modes
     // TODO: Ask: sidebar AI
-    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound, Share }
+    enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound } 
     enum SelectionMode { RectCorners, Circle }
     enum Phase { Select, Post }
     property var action: RegionSelection.SnipAction.Copy
@@ -275,15 +275,7 @@ PanelWindow {
         if (root.action === RegionSelection.SnipAction.Copy || root.action === RegionSelection.SnipAction.Edit) {
             root.action = root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.Edit : RegionSelection.SnipAction.Copy;
         }
-        if (root.mouseButton === Qt.MiddleButton && root.action === RegionSelection.SnipAction.Copy && Statusphere.canShare) {
-            root.action = RegionSelection.SnipAction.Share;
-        }
-        if (root.action === RegionSelection.SnipAction.Share) {
-            Statusphere.postRegion(root.screenshotPath, root.regionX * root.monitorScale, root.regionY * root.monitorScale, root.regionWidth * root.monitorScale, root.regionHeight * root.monitorScale);
-            root.dismiss();
-            return;
-        }
-
+        
         const screenshotDir = Config.options.screenSnip.savePath !== "" ? //
             Config.options.screenSnip.savePath : "";
         var screenshotAction = root.getScreenshotAction();
@@ -331,7 +323,7 @@ PanelWindow {
         id: mouseArea
         anchors.fill: parent
         cursorShape: Qt.CrossCursor
-        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         hoverEnabled: true
 
         // Controls
