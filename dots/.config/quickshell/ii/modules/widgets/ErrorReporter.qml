@@ -13,6 +13,8 @@ import QtQuick
 Singleton {
     id: root
     property var reported: ({})
+    property var askQueue: [] // notify-send is one at a time, failures are not
+    property bool asking: false
 
     readonly property var channels: ({
         "ntfy": `curl -sf -T - -H "Title: ii widget failed: $RW" "$RT"`,
@@ -34,8 +36,20 @@ Singleton {
             root.send(widgetId, message)
             return
         }
-        askProc.widgetId = widgetId
-        askProc.message = message
+        root.askQueue = root.askQueue.concat([{ "widgetId": widgetId, "message": message }])
+        root.askNext()
+    }
+
+    function askNext() {
+        if (root.asking || root.askQueue.length === 0)
+            return
+        if ((WidgetsStore.data.errorReports ?? "ask") === "never") { // Answered "never" mid-queue
+            root.askQueue = []
+            return
+        }
+        root.asking = true
+        askProc.widgetId = root.askQueue[0].widgetId
+        askProc.message = root.askQueue[0].message
         askProc.running = true
     }
 
@@ -60,6 +74,10 @@ Singleton {
                     root.send(askProc.widgetId, askProc.message)
                 else if (a === "never")
                     WidgetsStore.setKey("errorReports", "never")
+                root.askQueue = root.askQueue.slice(1)
+                root.asking = false
+                askProc.running = false
+                root.askNext()
             }
         }
     }
