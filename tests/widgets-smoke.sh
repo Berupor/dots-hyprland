@@ -10,6 +10,8 @@ STORE="$HOME/.config/illogical-impulse/widgets.json"
 LIVE="$HOME/.config/quickshell/ii/modules/widgets"
 SETTLE=3
 FAIL=0
+ERRS="ERROR|TypeError|Unable to assign|is not a type|not installed|failed to load"
+NOISE="ToolbarTabBar.qml\[59" # Upstream, fires on every tab rebuild
 
 mapfile -t WIDGETS < <(find "$WDIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
 echo "widgets: ${WIDGETS[*]}"
@@ -46,10 +48,10 @@ for combo in "${combos[@]}"; do
     n=$(qs -c ii log 2>/dev/null | wc -l)
     set_enabled "$combo"
     sleep "$SETTLE"
-    errs=$(qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -cE "ERROR|TypeError|Unable to assign|is not a type|not installed|failed to load")
+    errs=$(qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -E "$ERRS" | grep -cvE "$NOISE")
     if [ "$errs" -gt 0 ]; then
         printf 'FAIL %-60s %s new errors\n' "$combo" "$errs"
-        qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -E "ERROR|TypeError|Unable to assign|is not a type|not installed|failed to load" | head -3
+        qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -E "$ERRS" | grep -vE "$NOISE" | head -3
         FAIL=1
     else
         printf 'ok   %s\n' "$combo"
