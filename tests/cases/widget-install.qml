@@ -1,4 +1,4 @@
-//@ probe hello -x tests/fixtures/hello -g 560x120 -s 6000
+//@ probe hello -x tests/fixtures/hello -g 560x120 -s 9000
 /**
  * The install lifecycle against a local repo made out of the installed fixture,
  * so the case needs git but no network: clone, pull, delete, plus the guards.
@@ -48,6 +48,11 @@ Item {
                 "name": "update pulls in its directory",
                 "got": probe.seen.update ?? "",
                 "want": "Already up to date."
+            },
+            {
+                "name": "a new version is reported, with the reload it needs",
+                "got": probe.seen.bumped ?? "",
+                "want": "Updated to 1.1, reload to apply"
             },
             {
                 "name": "remove takes the directory with it",
@@ -101,6 +106,15 @@ Item {
         }
     }
 
+    Process {
+        id: bump
+        command: ["env", `IS=${probe.source}`, "bash", "-c", `
+            set -e
+            sed -i 's/^\\([[:space:]]*\\)version: "1.0"/\\1version: "1.1"/' "$IS/Manifest.qml"
+            git -C "$IS" -c user.email=t@t -c user.name=t commit -aqm bump`]
+        onExited: WidgetInstaller.update("hello-clone")
+    }
+
     Connections {
         target: WidgetInstaller
         function onStateChanged() {
@@ -113,6 +127,9 @@ Item {
                 break;
             case 1:
                 snap.update = WidgetInstaller.message;
+                break;
+            case 2:
+                snap.bumped = WidgetInstaller.message;
                 break;
             }
             probe.seen = Object.assign({}, probe.seen, snap);
@@ -135,9 +152,12 @@ Item {
                 WidgetInstaller.update("hello-clone");
                 break;
             case 2:
-                WidgetInstaller.remove("hello-clone");
+                bump.running = true; // A pull that brings a new version reads differently
                 break;
             case 3:
+                WidgetInstaller.remove("hello-clone");
+                break;
+            case 4:
                 // Refusals answer on the spot, and two in a row leave the state
                 // unchanged, so read the message instead of waiting for a signal
                 WidgetInstaller.install("   ");

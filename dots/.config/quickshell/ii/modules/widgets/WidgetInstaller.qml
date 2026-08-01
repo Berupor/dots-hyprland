@@ -68,7 +68,13 @@ Singleton {
         root.run(widgetId, ["env", `IN=${name}`, `IW=${WidgetCatalog.externalDir}`, "bash", "-c", `
             set -e
             case "$IN" in */*|.*|"") echo "Not a widget directory"; exit 1;; esac
-            git -C "$IW/$IN" pull --ff-only 2>&1 | tail -1`]);
+            d="$IW/$IN"
+            v() { sed -n 's/^[[:space:]]*version:[[:space:]]*"\\([^"]*\\)".*/\\1/p' "$d/Manifest.qml" | head -1; }
+            was=$(v)
+            out=$(git -C "$d" pull --ff-only 2>&1) || { echo "$out" | tail -1; exit 1; }
+            now=$(v)
+            # Files already loaded stay loaded, so a new version is not live yet
+            [ "$was" = "$now" ] && echo "$out" | tail -1 || echo "Updated to $now, reload to apply"`]);
     }
 
     /// Deletes a directory, so it goes by name and only where a Manifest.qml sits
