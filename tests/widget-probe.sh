@@ -118,8 +118,11 @@ for name in ${SHARE[@]+"${SHARE[@]}"}; do
 done
 for dir in ${EXTERNAL[@]+"${EXTERNAL[@]}"}; do
     [ "${dir#/}" = "$dir" ] && dir="$REPO/$dir"
-    mkdir -p "$CFG/illogical-impulse/widgets"
-    cp -r "$dir" "$CFG/illogical-impulse/widgets/" || { echo "no such widget dir: $dir"; exit 2; }
+    [ -d "$dir" ] || { echo "no such widget dir: $dir"; exit 2; }
+    # Not cp: an installed widget is a clone, and git's read-only packs break it
+    dest="$CFG/illogical-impulse/widgets/$(basename "$dir")"
+    mkdir -p "$dest"
+    (cd "$dir" && tar --exclude=.git -cf - .) | (cd "$dest" && tar -xf -)
 done
 
 # Generated colors live in the state dir, not the config one, so they need their own move
