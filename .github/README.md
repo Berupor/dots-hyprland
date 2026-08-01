@@ -70,7 +70,7 @@ their own. The ones that already did, with their own pictures and options:
 ## Install
 
 ```sh
-git clone --recurse-submodules -b extensions https://github.com/Berupor/dots-hyprland.git
+git clone --recurse-submodules -b extensions https://github.com/Berupor/dots-hyprland-extensions.git
 cd dots-hyprland
 ```
 
