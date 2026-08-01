@@ -17,4 +17,7 @@ contract that only works outside the shell tree:
 An external widget cannot import its own directory as a module: nothing in the
 shell tree imports it, so `qs.modules.widgets.<id>` is not installed.
 
-Asserted by `tests/cases/external-widget.qml`.
+Asserted by `tests/cases/external-widget.qml`. The same widget with a README, a
+demo scene, shots and CI around it is
+[ii-widget-hello](https://github.com/Berupor/ii-widget-hello), the one to hand an
+author; this copy stays small and offline, since the install cases clone from it.

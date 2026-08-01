@@ -15,10 +15,10 @@ FAIL=0
 "$REPO/tests/widgets-smoke.sh" --static || FAIL=1
 
 PROBES=(
-    "peripheralBattery barIndicator -o barIndicator=true -g 200x60"
-    "peripheralBattery sidebarRightTab -o sidebarTab=true -g 380x420"
+    "dotsUpdates barIndicator -o alwaysShow=true -o repoPath= -g 200x60"
     "androidWebcam barIndicator -g 200x60"
     "vpn barUtilButton -g 64x64"
+    "hello barIndicator -x tests/fixtures/hello -g 200x60" # The external path too
 )
 
 if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v qs > /dev/null; then

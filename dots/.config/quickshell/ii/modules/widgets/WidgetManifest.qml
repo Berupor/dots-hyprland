@@ -22,7 +22,8 @@ import Quickshell.Io
  * A widget can also be installed as ~/.config/illogical-impulse/widgets/<id>/, outside
  * the shell tree, and gets marked as such in the catalog. Same contract, two extras:
  * its own singletons need a `qmldir` next to them (`singleton Foo 1.0 Foo.qml`), and it
- * cannot import its own directory as a module. See tests/fixtures/hello for a working one.
+ * cannot import its own directory as a module. Working ones: tests/fixtures/hello here,
+ * github.com/Berupor/ii-widget-hello to copy from.
  * View slots take over a host screen instead of adding to it: `catalogView` replaces the
  * Widgets page (built-in one: WidgetCatalogView), `settingsView` the whole settings
  * window, titlebar included. Disable the widget to get the built-in view back.
