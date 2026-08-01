@@ -12,9 +12,9 @@ set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="${1:-$REPO/.github/assets/widgets-page.png}"
-KEEP="gpu"                                   # Tree widgets left in the catalog
+KEEP="dotsUpdates"                           # Tree widgets left in the catalog
 EXTERNAL="hello peripheralBattery statusphere" # Installed ones left in it
-ENABLED='["gpu","peripheralBattery"]'
+ENABLED='["dotsUpdates","peripheralBattery"]'
 PAGE=5                                       # Widgets, see the pages list in settings.qml
 SCALE=1.5                                    # Bigger than 1 for a crisp png, small enough to fit the screen
 W=1650

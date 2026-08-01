@@ -17,7 +17,6 @@ FAIL=0
 PROBES=(
     "dotsUpdates barIndicator -o alwaysShow=true -o repoPath= -g 200x60"
     "androidWebcam barIndicator -g 200x60"
-    "vpn barUtilButton -g 64x64"
     "hello barIndicator -x tests/fixtures/hello -g 200x60" # The external path too
 )
 

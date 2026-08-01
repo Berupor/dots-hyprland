@@ -6,8 +6,7 @@ import QtQuick.Layouts
 
 /**
  * Cpu rows in the resources popup: load, iowait, temperature.
- * ColumnLayout, not Column: rows stretch to the widest one so values right-align,
- * same as the gpu column.
+ * ColumnLayout, not Column: rows stretch to the widest one so values right-align.
  */
 ColumnLayout {
     id: root
