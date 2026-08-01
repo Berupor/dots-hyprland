@@ -16,7 +16,7 @@ Singleton {
 
     /// Version of the widget contract, not of the shell: minor up when it grows
     /// (a slot, a manifest property, an option type), major up when it breaks
-    readonly property string shellVersion: "1.0"
+    readonly property string shellVersion: "1.1"
 
     function isEnabled(widgetId) {
         return (WidgetsStore.data.enabled ?? []).includes(widgetId)

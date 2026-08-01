@@ -1,4 +1,4 @@
-//@ probe hello -x tests/fixtures/hello -g 560x400 -s 1500
+//@ probe hello -x tests/fixtures/hello -g 560x760 -s 1500
 /**
  * Catalog cards for an installed widget, a bundled one and one built for a shell
  * that isn't this one: only the installed one is marked, only the last one is barred.
@@ -19,6 +19,55 @@ Item {
         name: "Future"
         description: "Asks for a contract this shell does not have"
         minShellVersion: "9.0"
+    }
+
+    // external so the card opens without the store, see canExpand
+    WidgetManifest {
+        id: everyOption
+        widgetId: "everyOption"
+        name: "Every option"
+        description: "One control per option type"
+        external: true
+        options: [
+            {
+                key: "sw",
+                type: "switch",
+                label: "Switch",
+                icon: "toggle_on",
+                default: true
+            },
+            {
+                key: "num",
+                type: "spinBox",
+                label: "Number",
+                icon: "timer",
+                min: 0,
+                max: 10,
+                default: 3
+            },
+            {
+                key: "text",
+                type: "textField",
+                label: "Text",
+                icon: "edit",
+                placeholder: "Empty",
+                default: ""
+            }
+        ]
+    }
+
+    WidgetManifest {
+        id: noOption
+        widgetId: "noOption"
+        name: "No options"
+        description: "Nothing to draw, same card otherwise"
+        external: true
+    }
+
+    /// A contract version relative to this shell's, so a bump does not rewrite the checks
+    function contract(dMajor, dMinor) {
+        const parts = WidgetCatalog.shellVersion.split(".").map(Number);
+        return `${parts[0] + dMajor}.${parts[1] + dMinor}`;
     }
 
     function checks() {
@@ -67,8 +116,8 @@ Item {
             },
             {
                 "name": "the contract runs its own major, up to its own version",
-                "got": ["1.0", "0.9", "1.1", "2.0"].map(v => WidgetCatalog.supports(v)),
-                "want": [true, false, false, false]
+                "got": ["1.0", probe.contract(0, 0), probe.contract(-1, 0), probe.contract(0, 1), probe.contract(1, 0)].map(v => WidgetCatalog.supports(v)),
+                "want": [true, true, false, false, false]
             },
             {
                 // Its deps are fine, the contract is not, and available is the author's to override
@@ -79,12 +128,18 @@ Item {
             {
                 "name": "and its card says which contract it wanted",
                 "got": cards.itemAt(2)?.statusText ?? "",
-                "want": "Built for shell 9.0, this is 1.0"
+                "want": `Built for shell 9.0, this is ${WidgetCatalog.shellVersion}`
             },
             {
                 "name": "a widget that runs shows what it does instead",
                 "got": cards.itemAt(0)?.statusText ?? "",
                 "want": probe.installed?.description ?? ""
+            },
+            {
+                // A type the card cannot draw loads nothing, so the body stays that much shorter
+                "name": "every option type draws a control",
+                "got": (cards.itemAt(3)?.implicitHeight ?? 0) - (cards.itemAt(4)?.implicitHeight ?? 0) > 100,
+                "want": true
             }
         ];
     }
@@ -95,6 +150,8 @@ Item {
         onTriggered: {
             WidgetsStore.setEnabled("hello", false);
             cards.itemAt(0).expanded = true;
+            cards.itemAt(3).expanded = true;
+            cards.itemAt(4).expanded = true;
         }
     }
 
@@ -104,7 +161,7 @@ Item {
 
         Repeater {
             id: cards
-            model: [probe.installed, probe.bundled, future].filter(m => m !== null)
+            model: [probe.installed, probe.bundled, future, everyOption, noOption].filter(m => m !== null)
             delegate: WidgetCard {
                 required property var modelData
                 manifest: modelData

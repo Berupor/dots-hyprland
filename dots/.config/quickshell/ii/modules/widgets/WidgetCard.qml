@@ -126,6 +126,7 @@ CatalogCard {
                 switch (modelData.type) {
                 case "switch": return switchOption;
                 case "spinBox": return spinOption;
+                case "textField": return textOption;
                 }
                 return null;
             }
@@ -152,6 +153,37 @@ CatalogCard {
                     to: optLoader.modelData.max ?? 100
                     stepSize: optLoader.modelData.step ?? 1
                     onValueChanged: WidgetsStore.setOption(root.manifest.widgetId, optLoader.modelData.key, value)
+                }
+            }
+            Component {
+                id: textOption
+                RowLayout {
+                    spacing: 10
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+
+                    OptionalMaterialSymbol {
+                        icon: optLoader.modelData.icon ?? ""
+                    }
+
+                    StyledText {
+                        text: optLoader.modelData.label
+                        color: Appearance.colors.colOnSecondaryContainer
+                    }
+
+                    MaterialTextField {
+                        id: textField
+                        Layout.fillWidth: true
+                        placeholderText: optLoader.modelData.placeholder ?? ""
+                        text: root.manifest.optionValue(optLoader.modelData.key) ?? ""
+                        onTextChanged: commitText.restart()
+
+                        Timer {
+                            id: commitText
+                            interval: 400 // Every keystroke would rewrite widgets.json
+                            onTriggered: WidgetsStore.setOption(root.manifest.widgetId, optLoader.modelData.key, textField.text.trim())
+                        }
+                    }
                 }
             }
         }

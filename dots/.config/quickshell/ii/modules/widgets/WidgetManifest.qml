@@ -10,8 +10,11 @@ import Quickshell.Io
  * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`
  * 3. Declare options with defaults, read them via WidgetCatalog.option(id, key), or
  *    optionValue(key) from the manifest itself. Never re-state a default elsewhere.
- *    An option with a `label` is drawn by the card, one without is for a settingsPage
- * 4. List required binaries in `dependencies`
+ *    An option with a `label` is drawn by the card, one without is for a settingsPage.
+ *    Types: `switch`, `spinBox` (min/max/step), `textField` (placeholder)
+ * 4. List required binaries in `dependencies`. A widget runs its own Process where it
+ *    needs one; what cannot be QML is a dependency plus a README, never something the
+ *    catalog installs
  * 5. `settingsPage` renders inside the widget's card on the Widgets page: group with
  *    ContentSubsection, ContentSection is the host's altitude
  * 6. `backgroundWidget` builds on AbstractBackgroundWidget and stays loaded, so gate it
