@@ -17,6 +17,8 @@ What works today:
   whose dependency is missing says so on its card;
 - installing a widget from a git url and updating it from the same page. Every
   widget I have written lives in its own repository;
+- a [registry](https://github.com/Berupor/ii-widgets) to install from by name, so a
+  widget is found instead of pasted;
 - versions on both sides, so a widget built against a shell it does not know stays
   off;
 - probes, assertion cases and a design lint that render a widget in a throwaway
@@ -51,8 +53,10 @@ Set `errorReportsTarget` in the same json to post them to a receiver of your own
 The folder icon marks a widget installed from a url. A greyed out card carries the
 reason: a missing binary, or a shell version it was not built for.
 
-Nothing ships with the shell itself; every widget below is installed from its own
-repository, with its own pictures and options:
+Nothing ships with the shell itself. Browse widgets on that page lists what
+[the registry](https://github.com/Berupor/ii-widgets) knows and installs it in a click;
+a repository not in the registry still goes in by url. Every widget below has its own
+pictures and options:
 
 - [Peripheral battery](https://github.com/Berupor/ii-widget-peripheral-battery):
   mice, keyboards, headsets and other bluetooth things, in the bar and a

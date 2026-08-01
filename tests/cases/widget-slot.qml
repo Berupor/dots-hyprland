@@ -47,6 +47,26 @@ Item {
                 "want": false
             },
             {
+                "name": "a column host loads the widget drawing for it",
+                "got": column.count,
+                "want": 1
+            },
+            {
+                "name": "the widget is told which way it is drawn",
+                "got": column.itemAt(0)?.item?.vertical ?? false,
+                "want": true
+            },
+            {
+                "name": "there the gap goes under the item",
+                "got": stacked.implicitHeight - (stackedSlot.itemAt(0)?.implicitHeight ?? 0),
+                "want": 12
+            },
+            {
+                "name": "a slot declared without orientations stays out of a column",
+                "got": WidgetCatalog.forSlot("sidebarLeftTab", "vertical").length,
+                "want": 0
+            },
+            {
                 "name": "itemsFor builds one object per widget in the slot",
                 "got": tabs.length,
                 "want": 1
@@ -107,6 +127,24 @@ Item {
             id: gated
             slot: "barIndicator"
             shown: false
+        }
+    }
+
+    ColumnLayout {
+        WidgetSlot {
+            id: column
+            slot: "barIndicator"
+            vertical: true
+        }
+    }
+
+    ColumnLayout {
+        id: stacked
+        WidgetSlot {
+            id: stackedSlot
+            slot: "barIndicator"
+            vertical: true
+            spacing: 12
         }
     }
 }

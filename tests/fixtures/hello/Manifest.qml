@@ -11,7 +11,7 @@ WidgetManifest {
     author: "tests"
     minShellVersion: "1.0"
     slots: ({
-        "barIndicator": "HelloIndicator.qml",
+        "barIndicator": { "path": "HelloIndicator.qml", "orientations": ["horizontal", "vertical"] },
         "sidebarLeftTab": { "path": "HelloTab.qml", "icon": "waving_hand", "name": Translation.tr("Hello") },
         "regionAction": { "path": "HelloAction.qml", "name": "hello" }
     })

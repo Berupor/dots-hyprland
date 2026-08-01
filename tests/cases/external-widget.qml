@@ -10,7 +10,7 @@ Item {
     id: probe
 
     readonly property var manifest: WidgetCatalog.widgets.find(w => w.widgetId === "hello") ?? null
-    readonly property string slotPath: probe.manifest ? String(probe.manifest.resolve(probe.manifest.slots["barIndicator"])) : ""
+    readonly property string slotPath: probe.manifest ? String(probe.manifest.resolve(probe.manifest.slotPath("barIndicator"))) : ""
 
     function checks() {
         return [

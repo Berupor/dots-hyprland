@@ -16,14 +16,16 @@ Singleton {
 
     /// Version of the widget contract, not of the shell: minor up when it grows
     /// (a slot, a manifest property, an option type), major up when it breaks
-    readonly property string shellVersion: "1.1"
+    readonly property string shellVersion: "1.2"
 
     function isEnabled(widgetId) {
         return (WidgetsStore.data.enabled ?? []).includes(widgetId)
     }
 
-    function forSlot(slot) {
-        return widgets.filter(w => w.slots[slot] !== undefined && w.usable && isEnabled(w.widgetId))
+    /// Widgets in a slot, optionally only the ones drawing for a bar orientation
+    function forSlot(slot, orientation) {
+        return widgets.filter(w => w.slots[slot] !== undefined && w.usable && isEnabled(w.widgetId)
+            && (!orientation || w.slotOrientations(slot).includes(orientation)))
     }
 
     /// A widget runs on the contract it was built for: same major, not from the future
@@ -60,7 +62,7 @@ Singleton {
     /// whose value carries a path among other fields
     function itemsFor(slot, owner) {
         return root.forSlot(slot)
-            .map(w => root.build(w, w.resolve(w.slots[slot].path), owner))
+            .map(w => root.build(w, w.resolve(w.slotPath(slot)), owner))
             .filter(o => o)
     }
 
@@ -69,7 +71,7 @@ Singleton {
     function actionFor(slot, name, owner) {
         const manifest = root.forSlot(slot).find(w => name === "" || w.slots[slot].name === name)
         if (!manifest) return null
-        const action = root.build(manifest, manifest.resolve(manifest.slots[slot].path), owner)
+        const action = root.build(manifest, manifest.resolve(manifest.slotPath(slot)), owner)
         return action?.available ? action : null
     }
 

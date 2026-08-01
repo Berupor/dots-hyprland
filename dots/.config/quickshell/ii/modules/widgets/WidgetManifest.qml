@@ -64,6 +64,17 @@ QtObject {
         return `${dir}/${rel}`
     }
 
+    /// File of a slot, both the bare-path form and the one carrying other fields
+    function slotPath(slot) {
+        const entry = root.slots[slot]
+        return entry?.path ?? entry
+    }
+
+    /// Bar orientations a slot draws for. A bare path predates the field: horizontal
+    function slotOrientations(slot) {
+        return root.slots[slot]?.orientations ?? ["horizontal"]
+    }
+
     /// Stored option value, or the schema default. The only place a default is read
     function optionValue(key) {
         const stored = WidgetsStore.data.options?.[root.widgetId]?.[key]

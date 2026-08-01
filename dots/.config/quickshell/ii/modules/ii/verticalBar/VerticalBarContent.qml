@@ -8,6 +8,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.widgets
 import qs.modules.ii.bar as Bar
 
 Item { // Bar content region
@@ -138,6 +139,11 @@ Item { // Bar content region
             VerticalClockWidget {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
+            }
+
+            WidgetSlot {
+                slot: "barIndicator"
+                vertical: true
             }
 
             HorizontalBarSeparator {

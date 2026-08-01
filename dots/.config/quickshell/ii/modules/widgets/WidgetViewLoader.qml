@@ -11,6 +11,6 @@ Loader {
     readonly property var view: WidgetCatalog.viewFor(root.slot)
 
     active: !!root.view
-    source: root.view ? root.view.resolve(root.view.slots[root.slot]) : ""
+    source: root.view ? root.view.resolve(root.view.slotPath(root.slot)) : ""
     onStatusChanged: if (status === Loader.Error) WidgetCatalog.dropView(root.view.widgetId, root.source)
 }
