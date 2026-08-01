@@ -91,12 +91,7 @@ Item {
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
                     ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.catalogTabs.length === 0 && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
-                    ...root.catalogTabs.map(w => {
-                        const c = Qt.createComponent(w.resolve(w.slots.sidebarLeftTab.path));
-                        const o = c.createObject();
-                        if (!o) ErrorReporter.report(w.widgetId, c.errorString());
-                        return o;
-                    }).filter(o => o),
+                    ...WidgetCatalog.itemsFor("sidebarLeftTab"),
                 ]
             }
         }

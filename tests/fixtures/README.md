@@ -12,7 +12,10 @@ contract that only works outside the shell tree:
 - a singleton (`HelloState`), which needs the `qmldir` entry next to it - without
   one it still compiles and its properties silently read as empty;
 - an option from the manifest schema, read back through `WidgetCatalog.option`;
-- `version` and `minShellVersion`, the pair an installed widget is judged by.
+- `version` and `minShellVersion`, the pair an installed widget is judged by;
+- the three slot shapes a host reaches differently: a Loader path (`barIndicator`),
+  one the host builds into a layout (`sidebarLeftTab`) and one it calls
+  (`regionAction`).
 
 An external widget cannot import its own directory as a module: nothing in the
 shell tree imports it, so `qs.modules.widgets.<id>` is not installed.

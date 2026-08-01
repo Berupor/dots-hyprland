@@ -1,7 +1,7 @@
 //@ probe hello -x tests/fixtures/hello -g 320x120 -s 1500
 /**
- * WidgetSlot, the loader hosts put in a slot: one item per enabled widget,
- * the host gate on top of the widget's own, and the gap it asks for.
+ * The two ways a host reaches a slot: WidgetSlot for the ones it loads, and
+ * the catalog's own builders for the ones it hands to a layout or calls.
  */
 import qs.modules.widgets
 import QtQuick
@@ -11,6 +11,10 @@ Item {
     id: probe
 
     function checks() {
+        const tabs = WidgetCatalog.itemsFor("sidebarLeftTab", probe);
+        const claimed = WidgetCatalog.actionFor("regionAction", "hello", probe);
+        if (claimed)
+            claimed.perform("/tmp/shot.png", 1, 2, 3, 4);
         return [
             {
                 "name": "one loader per widget in the slot",
@@ -41,6 +45,36 @@ Item {
                 "name": "the host gate hides the item",
                 "got": gated.itemAt(0)?.visible ?? true,
                 "want": false
+            },
+            {
+                "name": "itemsFor builds one object per widget in the slot",
+                "got": tabs.length,
+                "want": 1
+            },
+            {
+                "name": "the built object is the widget's own type",
+                "got": tabs[0]?.greeting ?? "",
+                "want": "Hello"
+            },
+            {
+                "name": "itemsFor builds nothing for a slot nobody claims",
+                "got": WidgetCatalog.itemsFor("sidebarRightTab", probe).length,
+                "want": 0
+            },
+            {
+                "name": "actionFor finds the widget claiming the name",
+                "got": claimed?.lastRegion ?? "",
+                "want": "/tmp/shot.png 1,2 3x4"
+            },
+            {
+                "name": "an empty name takes the first one",
+                "got": !!WidgetCatalog.actionFor("regionAction", "", probe),
+                "want": true
+            },
+            {
+                "name": "a name nobody answers to gets nothing",
+                "got": WidgetCatalog.actionFor("regionAction", "nope", probe),
+                "want": null
             }
         ];
     }

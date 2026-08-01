@@ -48,6 +48,31 @@ Singleton {
         return root.forSlot(slot).filter(w => !root.brokenViews.includes(w.widgetId))[0] ?? null
     }
 
+    /// Object of a widget's slot file, null when it won't build. Dies with `owner`
+    function build(manifest, url, owner) {
+        const component = Qt.createComponent(url)
+        const object = component.createObject(owner ?? null)
+        if (!object) ErrorReporter.report(manifest.widgetId, component.errorString())
+        return object
+    }
+
+    /// One object per widget in a slot, the ones that fail dropped. For slots
+    /// whose value carries a path among other fields
+    function itemsFor(slot, owner) {
+        return root.forSlot(slot)
+            .map(w => root.build(w, w.resolve(w.slots[slot].path), owner))
+            .filter(o => o)
+    }
+
+    /// Object of the widget answering to a name in a slot, empty name for the first
+    /// one. Null when nobody takes it, or the widget says it cannot right now
+    function actionFor(slot, name, owner) {
+        const manifest = root.forSlot(slot).find(w => name === "" || w.slots[slot].name === name)
+        if (!manifest) return null
+        const action = root.build(manifest, manifest.resolve(manifest.slots[slot].path), owner)
+        return action?.available ? action : null
+    }
+
     // A view that won't load can't be switched off from itself
     function dropView(widgetId, url) {
         ErrorReporter.report(widgetId, `${url} failed to load`)
