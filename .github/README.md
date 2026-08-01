@@ -15,7 +15,7 @@ What works today:
 
 - a catalog with a settings page: widgets are picked per machine, and a widget
   whose dependency is missing says so on its card;
-- installing a widget from a git url and updating it from the same page. Three
+- installing a widget from a git url and updating it from the same page. Four
   already live in their own repositories;
 - versions on both sides, so a widget built against a shell it does not know stays
   off;
@@ -48,8 +48,8 @@ goes out until you fill in a target, and it asks first.
 The folder icon marks a widget installed from a url. A greyed out card carries the
 reason: a missing binary, or a shell version it was not built for.
 
-A few small ones ship with the shell and will likely move out into repositories of
-their own. The ones that already did, with their own pictures and options:
+One small one still ships with the shell and will likely move out too. The ones
+that already did, with their own pictures and options:
 
 - [Peripheral battery](https://github.com/Berupor/ii-widget-peripheral-battery):
   mice, keyboards, headsets and other bluetooth things, in the bar and a

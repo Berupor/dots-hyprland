@@ -7,7 +7,7 @@
 #   //@ probe -g 320x260 -s 2000
 #
 # A case that needs widget options starts the line with the widget: `//@ probe
-# dotsUpdates -o notify=true`.
+# hello -o badge=true`.
 #
 #   tests/qml-cases.sh [name ...]         # bare names, default all cases
 #   tests/qml-cases.sh -x <widget dir>    # demo/*.qml of a widget repo
