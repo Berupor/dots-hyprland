@@ -52,13 +52,15 @@ Singleton {
         return name !== "" && !name.includes("/") && !name.startsWith(".");
     }
 
-    /// Clones aside, names the directory after the widget id, then moves it in
-    function install(url) {
+    /// Clones aside, names the directory after the widget id, then moves it in.
+    /// `asId` is who to report progress to, empty for the url field
+    function install(url, asId) {
+        const job = asId ?? "";
         if (String(url).trim() === "") {
-            root.fail("", Translation.tr("Enter a repository url"));
+            root.fail(job, Translation.tr("Enter a repository url"));
             return;
         }
-        root.run("", ["env", `IU=${String(url).trim()}`, `IN=${root.idFor(url)}`, `IW=${WidgetCatalog.externalDir}`, `IS=${Directories.shellConfig}/.widget-install`, "bash", "-c", `
+        root.run(job, ["env", `IU=${String(url).trim()}`, `IN=${root.idFor(url)}`, `IW=${WidgetCatalog.externalDir}`, `IS=${Directories.shellConfig}/.widget-install`, "bash", "-c", `
             set -e
             rm -rf -- "$IS" # Staging sits outside the widget dir: a half clone is not a widget
             mkdir -p "$IW"

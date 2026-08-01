@@ -7,7 +7,11 @@ import Quickshell.Io
  * 1. Create modules/widgets/<id>/ with Manifest.qml and slot files.
  *    Service singletons go flat into modules/widgets/ (dynamically loaded
  *    files resolve `import qs.modules.widgets`, but not subdir modules)
- * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`
+ * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`.
+ *    Bar slots draw for the orientations they list: `{"path": ..., "orientations":
+ *    ["horizontal", "vertical"]}`, either one alone is as good as both. The bare-path
+ *    form means horizontal. A vertical host hands the file `vertical: true`, so one
+ *    that lists it declares `property bool vertical` and sizes off the bar thickness
  * 3. Declare options with defaults, read them via WidgetCatalog.option(id, key), or
  *    optionValue(key) from the manifest itself. Never re-state a default elsewhere.
  *    An option with a `label` is drawn by the card, one without is for a settingsPage.

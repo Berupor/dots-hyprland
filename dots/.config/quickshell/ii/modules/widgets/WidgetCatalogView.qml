@@ -53,9 +53,11 @@ ContentPage {
             color: Appearance.colors.colOutlineVariant
         }
 
-        InstallCard {
+        BrowseCard {
             expanded: root.catalogEmpty // The one thing to do here, so it opens itself
         }
+
+        InstallCard {}
 
         ErrorReportsCard {}
     }
