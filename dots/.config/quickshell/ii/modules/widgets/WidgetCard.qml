@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 import qs.modules.common.widgets
 import qs.modules.widgets
 
@@ -28,6 +29,13 @@ Rectangle {
         "settingsView": Translation.tr("Settings window")
     })
     readonly property var placements: Object.keys(root.manifest.slots).map(s => root.slotNames[s] ?? s)
+
+    /// Where an installed widget sits, so it is clear what to update or delete by hand
+    readonly property string originText: {
+        const path = FileUtils.trimFileProtocol(String(root.manifest.dir)).replace(FileUtils.trimFileProtocol(Directories.home), "~");
+        const by = [root.manifest.author, root.manifest.version].filter(s => s !== "").join(" · ");
+        return Translation.tr("Installed in %1").arg(path) + (by === "" ? "" : `\n${by}`);
+    }
 
     Layout.fillWidth: true
     implicitHeight: cardColumn.implicitHeight
@@ -131,6 +139,24 @@ Rectangle {
                         font.pixelSize: Appearance.font.pixelSize.smaller
                         color: root.manifest.available ? Appearance.colors.colSubtext : Appearance.colors.colError
                         wrapMode: Text.WordWrap
+                    }
+                }
+
+                MaterialSymbol {
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: root.manifest.external
+                    text: "folder_open"
+                    iconSize: Appearance.font.pixelSize.larger
+                    color: Appearance.colors.colOnSurfaceVariant
+
+                    HoverHandler {
+                        id: originHover
+                    }
+
+                    StyledToolTip {
+                        extraVisibleCondition: false
+                        alternativeVisibleCondition: originHover.hovered
+                        text: root.originText
                     }
                 }
 

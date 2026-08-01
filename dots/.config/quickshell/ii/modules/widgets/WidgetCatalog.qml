@@ -38,13 +38,13 @@ Singleton {
 
     function scan() {
         const found = []
-        const add = (name, dir) => {
+        const add = (name, dir, external) => {
             const component = Qt.createComponent(`${dir}/Manifest.qml`)
             if (component.status === Component.Error) {
                 ErrorReporter.report(name, component.errorString())
                 return
             }
-            const manifest = component.createObject(root, { "dir": dir })
+            const manifest = component.createObject(root, { "dir": dir, "external": external })
             if (!manifest) return
             if (found.some(w => w.widgetId === manifest.widgetId)) {
                 ErrorReporter.report(name, `duplicate widget id ${manifest.widgetId}`)
@@ -55,11 +55,11 @@ Singleton {
         for (let i = 0; i < folders.count; i++)
             // Resolve against this file, not the scanned fileUrl: bundled widgets
             // import their own qs.modules.widgets.<id> module, which only the qs: scheme has
-            add(folders.get(i, "fileName"), String(Qt.resolvedUrl(folders.get(i, "fileName"))))
+            add(folders.get(i, "fileName"), String(Qt.resolvedUrl(folders.get(i, "fileName"))), false)
         for (let i = 0; i < external.count; i++) {
             // A folder that does not exist yet makes the model list $HOME instead
             if (!String(external.get(i, "filePath")).startsWith(root.externalDir)) break
-            add(external.get(i, "fileName"), String(external.get(i, "fileUrl")))
+            add(external.get(i, "fileName"), String(external.get(i, "fileUrl")), true)
         }
         found.sort((a, b) => a.widgetId.localeCompare(b.widgetId))
         root.widgets = found

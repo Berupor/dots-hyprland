@@ -16,6 +16,10 @@ import Quickshell.Io
  *    ContentSubsection, ContentSection is the host's altitude
  * 6. `backgroundWidget` builds on AbstractBackgroundWidget and stays loaded, so gate it
  *    on its own option; `regionAction` exposes `available` and perform(path, x, y, w, h)
+ * A widget can also be installed as ~/.config/illogical-impulse/widgets/<id>/, outside
+ * the shell tree, and gets marked as such in the catalog. Same contract, two extras:
+ * its own singletons need a `qmldir` next to them (`singleton Foo 1.0 Foo.qml`), and it
+ * cannot import its own directory as a module. See tests/fixtures/hello for a working one.
  * View slots take over a host screen instead of adding to it: `catalogView` replaces the
  * Widgets page (built-in one: WidgetCatalogView), `settingsView` the whole settings
  * window, titlebar included. Disable the widget to get the built-in view back.
@@ -35,6 +39,7 @@ QtObject {
     property var options: []
     property string settingsPage: ""
     property url dir // Set by WidgetCatalog
+    property bool external: false // Ditto: installed by the user, not shipped with the shell
 
     property list<string> depsMissing: []
     property bool depsChecked: dependencies.length === 0
