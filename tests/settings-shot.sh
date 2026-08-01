@@ -4,20 +4,27 @@
 # the catalog holds a few widgets instead of every one installed here, and off a
 # throwaway config, so the palette is the same one the widget shots use.
 #
-#   tests/settings-shot.sh [out.png]
+#   tests/settings-shot.sh [-b] [out.png]
+#
+#   -b   open the Browse card, for the shot of the registry. Nothing here clicks,
+#        so the card is opened by a patch to the copy
 #
 # Unlike widget-probe.sh this one does put a window on your screen for a few
 # seconds: grabbing window chrome needs a window, and grim grabs from the screen.
 set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="${1:-$REPO/.github/assets/widgets-page.png}"
+BROWSE=0
+[ "${1:-}" = "-b" ] && { BROWSE=1; shift; }
+[ "$BROWSE" = 1 ] && NAME=widgets-registry || NAME=widgets-page
+OUT="${1:-$REPO/.github/assets/$NAME.png}"
 EXTERNAL="androidWebcam hello peripheralBattery statusphere vpn" # Installed widgets left in the catalog
 ENABLED='["peripheralBattery","vpn"]'
 PAGE=5                                       # Widgets, see the pages list in settings.qml
 SCALE=1.5                                    # Bigger than 1 for a crisp png, small enough to fit the screen
 W=1650
 H=1050
+[ "$BROWSE" = 1 ] && H=1290                  # The open card needs the room
 
 command -v grim > /dev/null || { echo "no grim"; exit 2; }
 command -v hyprctl > /dev/null || { echo "no hyprctl, this one needs the compositor"; exit 2; }
@@ -30,6 +37,8 @@ sed -i "s/property int currentPage: 0/property int currentPage: $PAGE/" "$TMP/ii
 # The page loader starts on pages[0] and only follows currentPage when it changes
 sed -i "s/source = root.pages\[0\].component/source = root.pages[$PAGE].component/" "$TMP/ii/settings.qml"
 sed -i "s/QT_SCALE_FACTOR=1$/QT_SCALE_FACTOR=$SCALE/" "$TMP/ii/settings.qml"
+[ "$BROWSE" = 1 ] && sed -i "s/^            expanded: root.catalogEmpty.*/            expanded: true/" \
+    "$TMP/ii/modules/widgets/WidgetCatalogView.qml"
 
 mkdir -p "$TMP/config" "$TMP/state/quickshell/user/generated"
 cp -r "$HOME/.config/illogical-impulse" "$TMP/config/"
