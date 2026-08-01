@@ -57,6 +57,8 @@ their own. The ones that already did, with their own pictures and options:
 - [Statusphere](https://github.com/Berupor/ii-widget-statusphere): a room of
   friends on the desktop, client for
   [statusphere](https://github.com/MAX1T1A/statusphere).
+- [VPN](https://github.com/Berupor/ii-widget-vpn): NetworkManager profiles and
+  tailscale exit nodes, from a button in the bar.
 - [Hello](https://github.com/Berupor/ii-widget-hello): the template to copy when
   writing your own.
 
