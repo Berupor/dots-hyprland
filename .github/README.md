@@ -55,8 +55,11 @@ reason: a missing binary, or a shell version it was not built for.
 
 Nothing ships with the shell itself. Browse widgets on that page lists what
 [the registry](https://github.com/Berupor/ii-widgets) knows and installs it in a click;
-a repository not in the registry still goes in by url. Every widget below has its own
-pictures and options:
+a repository not in the registry still goes in by url.
+
+![Browse widgets](assets/widgets-registry.png)
+
+Every widget below has its own pictures and options:
 
 - [Peripheral battery](https://github.com/Berupor/ii-widget-peripheral-battery):
   mice, keyboards, headsets and other bluetooth things, in the bar and a
@@ -148,7 +151,9 @@ the binaries it needs, and the settings page draws the options for you. The cont
 is written down in `modules/widgets/WidgetManifest.qml`;
 [ii-widget-hello](https://github.com/Berupor/ii-widget-hello) is the smallest widget
 that covers all of it, made to be copied. The same folder also works inside the shell
-tree, as `dots/.config/quickshell/ii/modules/widgets/<id>/`.
+tree, as `dots/.config/quickshell/ii/modules/widgets/<id>/`. A bar slot lists the
+orientations it draws for, so a widget can take the vertical bar, the horizontal one,
+or both.
 
 Colors and fonts come from `Appearance.*`, generated from the wallpaper, so a widget
 that hardcodes them looks wrong on everyone else's desktop and the lint says so. The
