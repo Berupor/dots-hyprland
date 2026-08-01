@@ -138,12 +138,13 @@ Your `config.json` survives both directions - upstream skips the keys it doesn't
 
 ## Writing a widget
 
-One folder with a `Manifest.qml`: `dots/.config/quickshell/ii/modules/widgets/<id>/`
-here, or `~/.config/illogical-impulse/widgets/<id>/` for one of your own. It declares
-its slots, its options and the binaries it needs, and the settings page draws the
-options for you. The contract is written down in `modules/widgets/WidgetManifest.qml`;
+One folder with a `Manifest.qml`, living in its own repository and installed as
+`~/.config/illogical-impulse/widgets/<id>/`. It declares its slots, its options and
+the binaries it needs, and the settings page draws the options for you. The contract
+is written down in `modules/widgets/WidgetManifest.qml`;
 [ii-widget-hello](https://github.com/Berupor/ii-widget-hello) is the smallest widget
-that covers all of it, made to be copied.
+that covers all of it, made to be copied. The same folder also works inside the shell
+tree, as `dots/.config/quickshell/ii/modules/widgets/<id>/`.
 
 Colors and fonts come from `Appearance.*`, generated from the wallpaper, so a widget
 that hardcodes them looks wrong on everyone else's desktop and the lint says so. The
