@@ -22,11 +22,12 @@ What works today:
 - probes, assertion cases and a design lint that render a widget in a throwaway
   shell instance, on a pre-push hook. The running session is never touched.
 
-The open question is what an upstream merge costs. The fork patches 28 upstream
-files, +525/-45 in total, mostly a hook line each, and keeps the rest in files of
-its own. No upstream release has landed since it branched, so there is nothing to
-show yet. If merges stay cheap through a few of them, the next step is an RFC for
-[#3073](https://github.com/end-4/dots-hyprland/issues/3073).
+The open question is what an upstream merge costs. The fork touches 18 upstream
+files, +172/-27 in total: nine carry the catalog hooks, a handful of lines each,
+and the rest are bug fixes that belong in a PR upstream. The catalog itself lives
+in files of its own. No upstream release has landed since it branched, so there is
+nothing to show yet. If merges stay cheap through a few of them, the next step is
+an RFC for [#3073](https://github.com/end-4/dots-hyprland/issues/3073).
 
 ## Branches
 
@@ -68,9 +69,14 @@ repository, with its own pictures and options:
 
 ## Not widgets, just patches
 
-- Lock screen: opaque surface with its own blurred wallpaper, no window flash on
-  resume; fingerprint re-arms after an unrecognized read.
 - Even spacing around the bar media and clock modules.
+- Bar CPU load leaves out I/O wait, which is not busy time.
+- Lock screen fingerprint re-arms after an unrecognized read.
+- Wallpaper thumbnails go through a temp file and a retry, so two views sharing one
+  no longer race for it.
+- Tray conflict check asks who owns the watcher name instead of whether kded6 runs.
+- Settings: nav rail highlights the tab you picked, labels do not fly in on open,
+  and selection tooltips render.
 
 ## Install
 
