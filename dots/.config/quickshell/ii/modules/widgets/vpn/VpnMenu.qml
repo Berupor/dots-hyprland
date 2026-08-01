@@ -53,6 +53,74 @@ Item {
         }
     }
 
+    // One row, shared by nm profiles and tailscale exit-node candidates
+    component ProfileRow: RippleButton {
+        id: profileRow
+        required property var modelData
+        readonly property bool isActive: modelData.active === true
+        readonly property color colText: profileRow.isActive ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
+        readonly property bool isTailscale: modelData.kind === "tailscale"
+
+        Layout.fillWidth: true
+        implicitHeight: 36
+        horizontalPadding: 10
+        buttonRadius: Appearance.rounding.verysmall
+        toggled: profileRow.isActive
+
+        colBackground: ColorUtils.transparentize(Appearance.colors.colLayer3)
+        colBackgroundHover: Appearance.colors.colLayer3Hover
+        colRipple: Appearance.colors.colLayer3Active
+        colBackgroundToggled: Appearance.colors.colSecondaryContainer
+        colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
+        colRippleToggled: Appearance.colors.colSecondaryContainerActive
+
+        releaseAction: () => {
+            if (profileRow.isActive)
+                VpnStatus.disconnect(profileRow.modelData.name);
+            else
+                VpnStatus.connect(profileRow.modelData.name);
+            root.requestClose();
+        }
+
+        contentItem: RowLayout {
+            anchors {
+                verticalCenter: parent.verticalCenter
+                left: parent.left
+                right: parent.right
+                leftMargin: profileRow.horizontalPadding
+                rightMargin: profileRow.horizontalPadding
+            }
+            spacing: 10
+
+            MaterialSymbol {
+                text: profileRow.isTailscale ? "alt_route" : (profileRow.isActive ? "vpn_lock" : "vpn_key")
+                fill: profileRow.isActive ? 1 : 0
+                iconSize: Appearance.font.pixelSize.large
+                color: profileRow.colText
+            }
+            StyledText {
+                Layout.fillWidth: true
+                text: profileRow.modelData.name
+                elide: Text.ElideRight
+                textFormat: Text.PlainText
+                color: profileRow.colText
+            }
+            // Turns into disconnect on hover, clicking the active profile drops the tunnel
+            MaterialSymbol {
+                visible: profileRow.isActive
+                text: profileRow.hovered ? "link_off" : "check"
+                iconSize: Appearance.font.pixelSize.large
+                color: profileRow.colText
+            }
+        }
+    }
+
+    component SectionLabel: StyledText {
+        Layout.leftMargin: 8
+        font.pixelSize: Appearance.font.pixelSize.smaller
+        color: Appearance.colors.colSubtext
+    }
+
     ColumnLayout {
         id: column
         anchors {
@@ -136,12 +204,9 @@ Item {
             }
         }
 
-        StyledText {
-            Layout.leftMargin: 8
+        SectionLabel {
             Layout.topMargin: 2
-            text: VpnStatus.profiles.length > 0 ? Translation.tr("Profiles") : Translation.tr("No profiles")
-            font.pixelSize: Appearance.font.pixelSize.smaller
-            color: Appearance.colors.colSubtext
+            text: VpnStatus.nmProfiles.length > 0 ? Translation.tr("Profiles") : Translation.tr("No profiles")
         }
 
         ColumnLayout { // Rows flush, they group by hover shape rather than by gaps
@@ -149,70 +214,29 @@ Item {
             spacing: 0
 
             Repeater {
-                model: VpnStatus.profiles
-                delegate: RippleButton {
-                    id: profileRow
-                    required property var modelData
-                    readonly property bool isActive: modelData.active === true
-                    readonly property color colText: profileRow.isActive ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
-
-                    Layout.fillWidth: true
-                    implicitHeight: 36
-                    horizontalPadding: 10
-                    buttonRadius: Appearance.rounding.verysmall
-                    toggled: profileRow.isActive
-
-                    colBackground: ColorUtils.transparentize(Appearance.colors.colLayer3)
-                    colBackgroundHover: Appearance.colors.colLayer3Hover
-                    colRipple: Appearance.colors.colLayer3Active
-                    colBackgroundToggled: Appearance.colors.colSecondaryContainer
-                    colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
-                    colRippleToggled: Appearance.colors.colSecondaryContainerActive
-
-                    releaseAction: () => {
-                        if (profileRow.isActive)
-                            VpnStatus.disconnect(profileRow.modelData.name);
-                        else
-                            VpnStatus.connect(profileRow.modelData.name);
-                        root.requestClose();
-                    }
-
-                    contentItem: RowLayout {
-                        anchors {
-                            verticalCenter: parent.verticalCenter
-                            left: parent.left
-                            right: parent.right
-                            leftMargin: profileRow.horizontalPadding
-                            rightMargin: profileRow.horizontalPadding
-                        }
-                        spacing: 10
-
-                        MaterialSymbol {
-                            text: profileRow.isActive ? "vpn_lock" : "vpn_key"
-                            fill: profileRow.isActive ? 1 : 0
-                            iconSize: Appearance.font.pixelSize.large
-                            color: profileRow.colText
-                        }
-                        StyledText {
-                            Layout.fillWidth: true
-                            text: profileRow.modelData.name
-                            elide: Text.ElideRight
-                            textFormat: Text.PlainText
-                            color: profileRow.colText
-                        }
-                        // Turns into disconnect on hover, clicking the active profile drops the tunnel
-                        MaterialSymbol {
-                            visible: profileRow.isActive
-                            text: profileRow.hovered ? "link_off" : "check"
-                            iconSize: Appearance.font.pixelSize.large
-                            color: profileRow.colText
-                        }
-                    }
-                }
+                model: VpnStatus.nmProfiles
+                delegate: ProfileRow {}
             }
         }
 
-        RippleButtonWithIcon { // Open the full tui manager
+        SectionLabel {
+            visible: VpnStatus.tsAvailable && VpnStatus.tsProfiles.length > 0
+            Layout.topMargin: 6
+            text: Translation.tr("Tailscale exit node")
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: VpnStatus.tsAvailable && VpnStatus.tsProfiles.length > 0
+            spacing: 0
+
+            Repeater {
+                model: VpnStatus.tsProfiles
+                delegate: ProfileRow {}
+            }
+        }
+
+        RippleButtonWithIcon { // Open nmtui for profiles nmcli itself can't edit here
             Layout.fillWidth: true
             Layout.topMargin: 4
             implicitHeight: 34
@@ -222,9 +246,10 @@ Item {
             colRipple: Appearance.colors.colLayer3Active
             materialIcon: "tune"
             materialIconFill: false
-            mainText: Translation.tr("Open manager…")
+            mainText: Translation.tr("Open nmtui…")
             onClicked: {
-                Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} -e $HOME/.local/bin/vpn`]);
+                // apps.terminal can carry its own flags ("kitty -1"), needs shell word-splitting
+                Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} -e nmtui`]);
                 root.requestClose();
             }
         }
