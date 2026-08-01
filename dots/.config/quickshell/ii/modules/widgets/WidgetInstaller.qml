@@ -25,11 +25,14 @@ Singleton {
     /// An install needs none of this: those files are new to the engine
     property bool needsReload: false
 
-    /// Reloads the shell running the widgets, this process or another one
+    /// Reloads the shell running the widgets, this process or another one. The
+    /// settings window is a process of its own and holds its own copy of the
+    /// manifests, so it is told too, or its cards keep the options of the old one
     function reloadShell() {
         root.needsReload = false;
         root.message = Translation.tr("Reloading the shell"); // Nothing else changes in this window
-        Quickshell.execDetached(["qs", "-p", Quickshell.shellPath(""), "ipc", "call", "widgets", "reload"]);
+        for (const path of ["", "settings.qml"])
+            Quickshell.execDetached(["qs", "-p", Quickshell.shellPath(path), "ipc", "call", "widgets", "reload"]);
     }
 
     /// Directory to clone into: the repo name, ssh and https urls alike

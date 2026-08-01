@@ -229,7 +229,7 @@ CatalogCard {
             onClicked: WidgetInstaller.reloadShell()
 
             StyledToolTip {
-                text: Translation.tr("Restarts the shell, so open panels close")
+                text: Translation.tr("Restarts the shell and this window, so open panels close")
             }
         }
 
