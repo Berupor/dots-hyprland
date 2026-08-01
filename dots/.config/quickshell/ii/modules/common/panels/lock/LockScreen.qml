@@ -16,12 +16,7 @@ Scope {
     property alias context: lockContext
     property Component sessionLockSurface: WlSessionLockSurface {
         id: sessionLockSurface
-        // Opaque + own wallpaper so no window flash on resume from suspend.
-        // See https://github.com/hyprwm/hypridle/issues/146
-        color: Appearance.colors.colLayer0
-        LockWallpaper {
-            anchors.fill: parent
-        }
+        color: "transparent"
         Loader {
             active: GlobalStates.screenLocked
             anchors.fill: parent

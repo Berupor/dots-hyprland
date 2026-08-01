@@ -242,10 +242,7 @@ Singleton {
                 property bool verbose: true
                 property bool vertical: false
                 property JsonObject resources: JsonObject {
-                    property bool showMemory: true
-                    property bool showSwap: true
-                    property bool showCpu: true
-                    property bool alwaysShowSwap: true // Otherwise hidden while media plays
+                    property bool alwaysShowSwap: true
                     property bool alwaysShowCpu: true
                     property int memoryWarningThreshold: 95
                     property int swapWarningThreshold: 85

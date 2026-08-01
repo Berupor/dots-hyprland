@@ -17,7 +17,6 @@ StyledPopup {
         spacing: 12
 
         Column {
-            visible: Config.options.bar.resources.showMemory
             anchors.top: parent.top
             spacing: 8
 
@@ -46,7 +45,7 @@ StyledPopup {
         }
 
         Column {
-            visible: Config.options.bar.resources.showSwap && ResourceUsage.swapTotal > 0
+            visible: ResourceUsage.swapTotal > 0
             anchors.top: parent.top
             spacing: 8
 
@@ -75,7 +74,6 @@ StyledPopup {
         }
 
         Column {
-            visible: Config.options.bar.resources.showCpu
             anchors.top: parent.top
             spacing: 8
 
@@ -83,7 +81,14 @@ StyledPopup {
                 icon: "planner_review"
                 label: "CPU"
             }
-            CpuPopupRows {}
+            Column {
+                spacing: 4
+                StyledPopupValueRow {
+                    icon: "bolt"
+                    label: Translation.tr("Load:")
+                    value: `${Math.round(ResourceUsage.cpuUsage * 100)}%`
+                }
+            }
         }
     }
 }
