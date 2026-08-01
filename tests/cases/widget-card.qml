@@ -11,7 +11,14 @@ Item {
     id: probe
 
     readonly property var installed: WidgetCatalog.widgets.find(w => w.widgetId === "hello") ?? null
-    readonly property var bundled: WidgetCatalog.widgets.find(w => w.widgetId === "androidWebcam") ?? null
+
+    // No widget ships in the tree any more, so the bundled one is a manifest right here
+    WidgetManifest {
+        id: bundled
+        widgetId: "bundled"
+        name: "Bundled"
+        description: "Comes with the shell, so it is nobody's to remove"
+    }
 
     WidgetManifest {
         id: future
@@ -110,7 +117,7 @@ Item {
             },
             {
                 "name": "a bundled widget is not",
-                "got": probe.bundled?.external ?? null,
+                "got": bundled.external,
                 "want": false
             },
             {
@@ -202,7 +209,7 @@ Item {
 
         Repeater {
             id: cards
-            model: [probe.installed, probe.bundled, future, everyOption, noOption].filter(m => m !== null)
+            model: [probe.installed, bundled, future, everyOption, noOption].filter(m => m !== null)
             delegate: WidgetCard {
                 required property var modelData
                 manifest: modelData

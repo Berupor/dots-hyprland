@@ -14,9 +14,10 @@ FAIL=0
 
 "$REPO/tests/widgets-smoke.sh" --static || FAIL=1
 
+# No widget ships in the tree, so the fixture is what there is to render here.
+# Widgets of my own are probed by the pre-push hook in their own repositories.
 PROBES=(
-    "androidWebcam barIndicator -p shown=true -g 200x60" # Zero width without a phone
-    "hello barIndicator -x tests/fixtures/hello -g 200x60" # The external path too
+    "hello barIndicator -x tests/fixtures/hello -g 200x60"
 )
 
 if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v qs > /dev/null; then

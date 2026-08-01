@@ -12,8 +12,7 @@ set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="${1:-$REPO/.github/assets/widgets-page.png}"
-KEEP="androidWebcam"                             # Tree widgets left in the catalog
-EXTERNAL="hello peripheralBattery statusphere vpn" # Installed ones left in it
+EXTERNAL="androidWebcam hello peripheralBattery statusphere vpn" # Installed widgets left in the catalog
 ENABLED='["peripheralBattery","vpn"]'
 PAGE=5                                       # Widgets, see the pages list in settings.qml
 SCALE=1.5                                    # Bigger than 1 for a crisp png, small enough to fit the screen
@@ -27,9 +26,6 @@ TMP=$(mktemp -d /tmp/settings-shot.XXXXXX)
 trap 'rm -rf "$TMP"' EXIT INT TERM
 
 cp -r "$REPO/dots/.config/quickshell/ii" "$TMP/ii"
-for dir in "$TMP"/ii/modules/widgets/*/; do
-    case " $KEEP " in *" $(basename "$dir") "*) ;; *) rm -rf "$dir" ;; esac
-done
 sed -i "s/property int currentPage: 0/property int currentPage: $PAGE/" "$TMP/ii/settings.qml"
 # The page loader starts on pages[0] and only follows currentPage when it changes
 sed -i "s/source = root.pages\[0\].component/source = root.pages[$PAGE].component/" "$TMP/ii/settings.qml"

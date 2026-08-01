@@ -30,9 +30,11 @@ Item {
                 "want": true
             },
             {
-                "name": "bundled widgets still load",
-                "got": WidgetCatalog.widgets.map(w => w.widgetId).includes("androidWebcam"),
-                "want": true
+                // The mechanism files sit in the tree dir the scan walks, and no
+                // widget ships there any more, so every widget found is an installed one
+                "name": "the tree scan claims nothing of its own",
+                "got": WidgetCatalog.widgets.filter(w => !w.external).length,
+                "want": 0
             },
             {
                 "name": "it reaches its slot",

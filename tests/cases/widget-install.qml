@@ -74,13 +74,13 @@ Item {
                 "want": "Enter a repository url"
             },
             {
-                "name": "a bundled widget is not ours to remove",
-                "got": probe.seen.bundled ?? "",
-                "want": "androidWebcam is not installed here"
+                "name": "a widget we did not install is not ours to remove",
+                "got": probe.seen.foreign ?? "",
+                "want": "notOurs is not installed here"
             },
             {
-                "name": "and it is still in the catalog",
-                "got": WidgetCatalog.widgets.map(w => w.widgetId).includes("androidWebcam"),
+                "name": "and the refusal takes no directory with it",
+                "got": probe.installedNames().includes("hello"),
                 "want": true
             }
         ];
@@ -173,8 +173,8 @@ Item {
                 // unchanged, so read the message instead of waiting for a signal
                 WidgetInstaller.install("   ");
                 const emptyUrl = WidgetInstaller.message;
-                WidgetInstaller.remove("androidWebcam");
-                probe.seen = Object.assign({}, probe.seen, { "removedIds": ids, "emptyUrl": emptyUrl, "bundled": WidgetInstaller.message });
+                WidgetInstaller.remove("notOurs");
+                probe.seen = Object.assign({}, probe.seen, { "removedIds": ids, "emptyUrl": emptyUrl, "foreign": WidgetInstaller.message });
                 break;
             }
         }
