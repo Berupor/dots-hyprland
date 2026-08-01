@@ -39,9 +39,11 @@ show yet. If merges stay cheap through a few of them, the next step is an RFC fo
 
 All widgets ship disabled. The settings app has a Widgets page that lists them with
 their options; picks are saved to `~/.config/illogical-impulse/widgets.json`, which
-nothing else touches. The same page can point widget failures at an ntfy topic, a
-webhook or a command: it sends the error plus the last 100 log lines, so nothing
-goes out until you fill in a target, and it asks first.
+nothing else touches. The same page carries one switch for error reports, off by
+default: turn it on and a widget failure is sent to my [Bugsink](https://www.bugsink.com/)
+at `reports.ug3n.com`, with the last 100 log lines, window titles and paths
+included. Off, nothing leaves the machine and failures only land in the shell log.
+Set `errorReportsTarget` in the same json to post them to a receiver of your own.
 
 ![The Widgets page](assets/widgets-page.png)
 
