@@ -187,18 +187,12 @@ Item { // Bar content region
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                Repeater { // Catalog widgets
-                    model: WidgetCatalog.forSlot("barIndicator")
-                    delegate: Loader {
-                        required property var modelData
-                        Layout.alignment: Qt.AlignVCenter
-                        // Indicators hug their glyph, the battery pill is filled to its edge:
-                        // matches the gaps the util buttons and the pill make on their own
-                        Layout.rightMargin: 12
-                        source: modelData.resolve(modelData.slots.barIndicator)
-                        visible: (item?.shown ?? true) && root.useShortenedForm < 2
-                        onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
-                    }
+                WidgetSlot {
+                    slot: "barIndicator"
+                    shown: root.useShortenedForm < 2
+                    // Indicators hug their glyph, the battery pill is filled to its edge:
+                    // matches the gaps the util buttons and the pill make on their own
+                    spacing: 12
                 }
 
                 BatteryIndicator {

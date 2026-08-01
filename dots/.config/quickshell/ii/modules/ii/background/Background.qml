@@ -266,19 +266,15 @@ Variants {
                     }
                 }
 
-                Repeater { // Catalog widgets
-                    model: WidgetCatalog.forSlot("backgroundWidget")
-                    delegate: Loader {
-                        required property var modelData
-                        Component.onCompleted: setSource(modelData.resolve(modelData.slots.backgroundWidget), {
-                            "screenWidth": bgRoot.screen.width,
-                            "screenHeight": bgRoot.screen.height,
-                            "scaledScreenWidth": bgRoot.screen.width,
-                            "scaledScreenHeight": bgRoot.screen.height,
-                            "wallpaperScale": 1
-                        })
-                        onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
-                    }
+                WidgetSlot {
+                    slot: "backgroundWidget"
+                    initialProperties: ({
+                        "screenWidth": bgRoot.screen.width,
+                        "screenHeight": bgRoot.screen.height,
+                        "scaledScreenWidth": bgRoot.screen.width,
+                        "scaledScreenHeight": bgRoot.screen.height,
+                        "wallpaperScale": 1
+                    })
                 }
 
                 FadeLoader {

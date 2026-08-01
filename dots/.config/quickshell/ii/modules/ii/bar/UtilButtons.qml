@@ -21,14 +21,8 @@ Item {
         spacing: 4
         anchors.centerIn: parent
 
-        Repeater { // Catalog widgets
-            model: WidgetCatalog.forSlot("barUtilButton")
-            delegate: Loader {
-                required property var modelData
-                Layout.alignment: Qt.AlignVCenter
-                source: modelData.resolve(modelData.slots.barUtilButton)
-                onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
-            }
+        WidgetSlot {
+            slot: "barUtilButton"
         }
 
         Loader {
