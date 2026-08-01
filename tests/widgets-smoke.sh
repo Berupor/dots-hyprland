@@ -27,14 +27,15 @@ if [ -n "$QMLLINT" ]; then
     while IFS= read -r f; do
         out=$("$QMLLINT" "$f" 2>&1 | grep -E "^Error:|\[syntax")
         [ -n "$out" ] && { echo "qmllint: $f"; echo "$out"; FAIL=1; }
-    done < <(find "$WDIR" "$REPO/tests/cases" -name '*.qml')
+    done < <(find "$WDIR" "$REPO/tests/cases" "$REPO/tests/fixtures" -name '*.qml')
 else
     echo "no qmllint, syntax lint skipped"
 fi
 
 # --- static: design lint (Material You contract) -----------------------------
-hex=$(grep -rnE 'color:.*"#[0-9a-fA-F]{3,8}"' "$WDIR" | grep -v transparent)
-fonts=$(grep -rn "font.family:" "$WDIR" | grep -v "Appearance\.")
+DESIGN=("$WDIR" "$REPO/tests/fixtures") # The fixture is the reference external widget
+hex=$(grep -rnE 'color:.*"#[0-9a-fA-F]{3,8}"' "${DESIGN[@]}" | grep -v transparent)
+fonts=$(grep -rn "font.family:" "${DESIGN[@]}" | grep -v "Appearance\.")
 [ -n "$hex" ] && { echo "design lint, hardcoded colors:"; echo "$hex"; FAIL=1; }
 [ -n "$fonts" ] && { echo "design lint, fonts outside Appearance:"; echo "$fonts"; FAIL=1; }
 
