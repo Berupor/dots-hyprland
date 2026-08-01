@@ -22,5 +22,7 @@ ContentPage {
         }
     }
 
+    WidgetInstallSection {}
+
     ErrorReportsSection {}
 }

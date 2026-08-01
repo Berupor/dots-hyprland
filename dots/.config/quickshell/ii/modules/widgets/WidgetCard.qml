@@ -14,9 +14,13 @@ Rectangle {
     required property var manifest
     readonly property bool widgetEnabled: WidgetCatalog.isEnabled(manifest.widgetId)
     readonly property var drawnOptions: manifest.options.filter(o => o.label) // The rest are values for a settingsPage
-    readonly property bool hasBody: root.drawnOptions.length > 0 || manifest.settingsPage !== "" || root.placements.length > 0
-    readonly property bool bodyShown: root.widgetEnabled && root.hasBody && root.expanded
+    readonly property bool hasBody: root.drawnOptions.length > 0 || manifest.settingsPage !== "" || root.placements.length > 0 || manifest.external
+    // An installed widget opens while off too, that is where update and remove live
+    readonly property bool canExpand: root.hasBody && (root.widgetEnabled || root.manifest.external)
+    readonly property bool bodyShown: root.canExpand && root.expanded
+    readonly property string jobMessage: WidgetInstaller.job === root.manifest.widgetId ? WidgetInstaller.message : ""
     property bool expanded: false
+    property bool confirmingRemove: false
 
     readonly property var slotNames: ({
         "barUtilButton": Translation.tr("Bar button"),
@@ -83,7 +87,7 @@ Rectangle {
                 id: headerArea
                 anchors.fill: parent
                 hoverEnabled: true
-                enabled: root.widgetEnabled && root.hasBody
+                enabled: root.canExpand
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.expanded = !root.expanded
             }
@@ -162,7 +166,7 @@ Rectangle {
 
                 MaterialSymbol {
                     Layout.alignment: Qt.AlignVCenter
-                    opacity: (root.widgetEnabled && root.hasBody) ? 1 : 0
+                    opacity: root.canExpand ? 1 : 0
                     text: "keyboard_arrow_down"
                     iconSize: Appearance.font.pixelSize.huge
                     color: Appearance.colors.colOnSurfaceVariant
@@ -275,6 +279,57 @@ Rectangle {
                     Layout.fillWidth: true
                     active: root.bodyShown && root.manifest.settingsPage !== ""
                     source: active ? root.manifest.resolve(root.manifest.settingsPage) : ""
+                }
+
+                RowLayout { // Installed widgets are ours to update and delete
+                    visible: root.manifest.external
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+                    spacing: 8
+
+                    StyledText { // Fills even while empty, so the buttons stay right
+                        Layout.fillWidth: true
+                        text: root.jobMessage
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        color: WidgetInstaller.state === WidgetInstaller.State.Failed ? Appearance.colors.colError : Appearance.colors.colSubtext
+                        wrapMode: Text.WordWrap
+                    }
+
+                    RippleButtonWithIcon {
+                        buttonRadius: Appearance.rounding.small
+                        enabled: !WidgetInstaller.busy
+                        materialIcon: "sync"
+                        mainText: Translation.tr("Update")
+                        onClicked: {
+                            root.confirmingRemove = false;
+                            WidgetInstaller.update(root.manifest.widgetId);
+                        }
+
+                        StyledToolTip {
+                            text: Translation.tr("git pull in the widget directory")
+                        }
+                    }
+
+                    RippleButtonWithIcon {
+                        buttonRadius: Appearance.rounding.small
+                        enabled: !WidgetInstaller.busy
+                        materialIcon: root.confirmingRemove ? "delete_forever" : "delete"
+                        mainText: root.confirmingRemove ? Translation.tr("Sure?") : Translation.tr("Remove")
+                        onClicked: {
+                            if (root.confirmingRemove)
+                                WidgetInstaller.remove(root.manifest.widgetId);
+                            root.confirmingRemove = !root.confirmingRemove;
+                            forgetConfirm.restart();
+                        }
+
+                        Timer {
+                            id: forgetConfirm
+                            interval: 4000 // A stray click should not leave a live delete button
+                            onTriggered: root.confirmingRemove = false
+                        }
+                    }
                 }
 
                 Item {
