@@ -455,7 +455,7 @@ Singleton {
                     property int padding: 10
                 }
                 property JsonObject annotation: JsonObject {
-                    property bool useSatty: true
+                    property bool useSatty: false
                 }
             }
 

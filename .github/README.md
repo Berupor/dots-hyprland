@@ -65,7 +65,6 @@ their own. The ones that already did, with their own pictures and options:
 - Lock screen: opaque surface with its own blurred wallpaper, no window flash on
   resume; fingerprint re-arms after an unrecognized read.
 - Even spacing around the bar media and clock modules.
-- Screenshot annotation defaults to `satty`.
 
 ## Install
 
@@ -95,8 +94,7 @@ rsync -a --delete dots/.config/quickshell/ii/ ~/.config/quickshell/ii/
 `Ctrl+Super+R` restarts the shell, then pick widgets in the settings app. `--delete`
 leaves exactly the fork's tree behind, local edits under `ii/` included - hence the
 copy. Nothing outside `ii/` changes and no extra packages are needed: widgets ship
-disabled, and `satty` is the only new default (screenshot annotation, switch it off in
-settings if you don't have it).
+disabled and nothing new is on by default.
 
 `./setup install-files` sits in between: all the config files, no packages. Take that
 one instead of the rsync if your dots are older than this branch's merge base, since
