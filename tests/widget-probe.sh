@@ -168,6 +168,13 @@ for _ in $(seq 80); do
 done
 pkill -f "qs -p $HARNESS"
 
+# Quickshell keeps a log directory per instance and never sweeps it, and a probe
+# run leaves 4MB behind: a few hundred of them fill $XDG_RUNTIME_DIR
+RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/quickshell"
+INSTANCE=$(sed -nE 's|.*Saving logs to "(.*)/log\.qslog".*|\1|p' "$LOG" 2>/dev/null | head -1)
+case "$INSTANCE" in "$RUNTIME"/*) rm -rf "$INSTANCE";; esac # Ours only, it is an rm -rf
+find "$RUNTIME" -maxdepth 2 -xtype l -delete 2>/dev/null
+
 grep -E "\[harness\]|WARN|ERROR" "$LOG" 2>/dev/null |
     grep -vE "Saving logs|Shell ID|Launching config|translations/.*failed" |
     sed -E 's/\x1b\[[0-9;]*m//g; s/^ *(DEBUG|WARN|ERROR)[^:]*: *//; s/\[harness\] //'
