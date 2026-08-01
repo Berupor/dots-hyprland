@@ -1,4 +1,4 @@
-//@ probe hello -x tests/fixtures/hello -g 560x220 -s 1500
+//@ probe hello -x tests/fixtures/hello -g 560x300 -s 1500
 /**
  * Catalog cards for an installed widget and a bundled one: only the installed
  * one is marked, and its marker says where it sits.
@@ -40,8 +40,28 @@ Item {
                 "name": "cards render at full width",
                 "got": (cards.itemAt(0)?.width ?? 0) === probe.width && (cards.itemAt(1)?.width ?? 0) === probe.width,
                 "want": true
+            },
+            {
+                // Update and remove live in the body, and a widget is usually off when removed
+                "name": "an installed widget opens while switched off",
+                "got": (cards.itemAt(0)?.widgetEnabled ?? true) === false && (cards.itemAt(0)?.bodyShown ?? false),
+                "want": true
+            },
+            {
+                "name": "a bundled one does not",
+                "got": cards.itemAt(1)?.canExpand ?? true,
+                "want": false
             }
         ];
+    }
+
+    Timer { // The probe enables what it probes, and removal is a thing you do to an off widget
+        running: true
+        interval: 300
+        onTriggered: {
+            WidgetsStore.setEnabled("hello", false);
+            cards.itemAt(0).expanded = true;
+        }
     }
 
     ColumnLayout {
