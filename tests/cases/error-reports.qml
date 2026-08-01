@@ -47,9 +47,10 @@ Item {
         ];
     }
 
-    ErrorReportsSection {
+    ErrorReportsCard {
         id: section
         width: probe.width
+        expanded: true
     }
 
     Connections {

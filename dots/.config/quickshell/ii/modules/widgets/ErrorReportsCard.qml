@@ -9,62 +9,64 @@ import qs.modules.widgets
  * Where widget failure reports go. Keys are documented in ErrorReporter.
  * Only the webhook channel is offered here; ntfy and command stay hand-edited.
  */
-ContentSection {
-    id: section
+CatalogCard {
+    id: root
     readonly property string mode: WidgetsStore.data.errorReports ?? "ask"
     readonly property string target: WidgetsStore.data.errorReportsTarget ?? ""
 
-    icon: "bug_report"
-    title: Translation.tr("Error reports")
-
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 4
-
-        ContentSubsectionLabel {
-            text: Translation.tr("When a widget fails")
-        }
-
-        ConfigSelectionArray {
-            currentValue: section.mode
-            onSelected: newValue => WidgetsStore.setKey("errorReports", newValue)
-            options: [
-                {
-                    displayName: Translation.tr("Ask"),
-                    icon: "contact_support",
-                    value: "ask",
-                    tooltip: Translation.tr("A notification per failure, with the report waiting for your answer")
-                },
-                {
-                    displayName: Translation.tr("Send"),
-                    icon: "send",
-                    value: "always",
-                    tooltip: Translation.tr("Sends every failure without asking. Same widget and message goes out once per session")
-                },
-                {
-                    displayName: Translation.tr("Never"),
-                    icon: "block",
-                    value: "never",
-                    tooltip: Translation.tr("Nothing leaves this machine; failures still land in the shell log")
-                }
-            ]
-        }
+    /// Host, so a long url does not push the header around
+    readonly property string summary: {
+        if (root.mode === "never" || root.target === "")
+            return Translation.tr("Nothing leaves this machine");
+        const host = root.target.replace(/^\w+:\/\//, "").split("/")[0];
+        return root.mode === "always" ? Translation.tr("Sent to %1").arg(host) : Translation.tr("Asked before sending to %1").arg(host);
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        Layout.topMargin: 8
-        spacing: 4
+    icon: "bug_report"
+    title: Translation.tr("Error reports")
+    subtitle: root.summary
+    iconColor: Appearance.colors.colSecondaryContainer
+    iconSymbolColor: Appearance.colors.colOnSecondaryContainer
 
-        ContentSubsectionLabel {
-            text: Translation.tr("Where they go")
-        }
+    ContentSubsectionLabel {
+        text: Translation.tr("When a widget fails")
+    }
+
+    ConfigSelectionArray {
+        Layout.bottomMargin: 8
+        currentValue: root.mode
+        onSelected: newValue => WidgetsStore.setKey("errorReports", newValue)
+        options: [
+            {
+                displayName: Translation.tr("Ask"),
+                icon: "contact_support",
+                value: "ask",
+                tooltip: Translation.tr("A notification per failure, with the report waiting for your answer")
+            },
+            {
+                displayName: Translation.tr("Send"),
+                icon: "send",
+                value: "always",
+                tooltip: Translation.tr("Sends every failure without asking. Same widget and message goes out once per session")
+            },
+            {
+                displayName: Translation.tr("Never"),
+                icon: "block",
+                value: "never",
+                tooltip: Translation.tr("Nothing leaves this machine; failures still land in the shell log")
+            }
+        ]
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
 
         MaterialTextArea {
             id: targetField
             Layout.fillWidth: true
             placeholderText: Translation.tr("URL that takes a POST")
-            text: section.target
+            text: root.target
             wrapMode: TextEdit.WrapAnywhere // A URL has nowhere to break by words
             onTextChanged: {
                 ErrorReporter.testState = ErrorReporter.TestState.Idle;
@@ -78,20 +80,10 @@ ContentSection {
             }
         }
 
-        StyledText {
-            Layout.fillWidth: true
-            Layout.leftMargin: 2
-            text: Translation.tr("The error goes out with the last 100 log lines, window titles and paths included. Empty means nothing is ever sent.")
-            font.pixelSize: Appearance.font.pixelSize.smaller
-            color: Appearance.colors.colSubtext
-            wrapMode: Text.WordWrap
-        }
-
         RippleButtonWithIcon {
-            Layout.alignment: Qt.AlignRight
-            Layout.topMargin: 4
+            Layout.alignment: Qt.AlignVCenter
             buttonRadius: Appearance.rounding.small
-            enabled: section.target !== "" && ErrorReporter.testState !== ErrorReporter.TestState.Sending
+            enabled: root.target !== "" && ErrorReporter.testState !== ErrorReporter.TestState.Sending
             materialIcon: {
                 switch (ErrorReporter.testState) {
                 case ErrorReporter.TestState.Sent:
@@ -118,5 +110,14 @@ ContentSection {
                 text: Translation.tr("Sends one report as a broken widget would")
             }
         }
+    }
+
+    StyledText {
+        Layout.fillWidth: true
+        Layout.topMargin: 2
+        text: Translation.tr("The error goes out with the last 100 log lines, window titles and paths included. Empty means nothing is ever sent.")
+        font.pixelSize: Appearance.font.pixelSize.smaller
+        color: Appearance.colors.colSubtext
+        wrapMode: Text.WordWrap
     }
 }
