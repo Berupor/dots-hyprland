@@ -21,6 +21,17 @@ Singleton {
     property string job: "" // Widget id being worked on, "" for an install
     readonly property bool busy: root.state === WidgetInstaller.State.Working
 
+    /// A pull swapped files under a running shell, which keeps the ones it loaded.
+    /// An install needs none of this: those files are new to the engine
+    property bool needsReload: false
+
+    /// Reloads the shell running the widgets, this process or another one
+    function reloadShell() {
+        root.needsReload = false;
+        root.message = Translation.tr("Reloading the shell"); // Nothing else changes in this window
+        Quickshell.execDetached(["qs", "-p", Quickshell.shellPath(""), "ipc", "call", "widgets", "reload"]);
+    }
+
     /// Directory to clone into: the repo name, ssh and https urls alike
     function idFor(url) {
         return String(url).trim().replace(/\/+$/, "").split(/[\/:]/).pop().replace(/\.git$/, "");
@@ -70,11 +81,11 @@ Singleton {
             case "$IN" in */*|.*|"") echo "Not a widget directory"; exit 1;; esac
             d="$IW/$IN"
             v() { sed -n 's/^[[:space:]]*version:[[:space:]]*"\\([^"]*\\)".*/\\1/p' "$d/Manifest.qml" | head -1; }
-            was=$(v)
+            was=$(git -C "$d" rev-parse HEAD)
             out=$(git -C "$d" pull --ff-only 2>&1) || { echo "$out" | tail -1; exit 1; }
-            now=$(v)
-            # Files already loaded stay loaded, so a new version is not live yet
-            [ "$was" = "$now" ] && echo "$out" | tail -1 || echo "Updated to $now, reload to apply"`]);
+            [ "$was" = "$(git -C "$d" rev-parse HEAD)" ] && { echo "$out" | tail -1; exit 0; }
+            now=$(v) # The prefix asks for a reload, see needsReload
+            echo "reload:Updated\${now:+ to $now}"`]);
     }
 
     /// Deletes a directory, so it goes by name and only where a Manifest.qml sits
@@ -127,7 +138,9 @@ Singleton {
         onExited: exitCode => {
             // git talks in many lines and the last one says what happened
             const lines = `${output.text}\n${errors.text}`.trim().split("\n").filter(l => l.trim() !== "");
-            root.message = lines.pop() ?? (exitCode === 0 ? Translation.tr("Done") : Translation.tr("git failed"));
+            const last = lines.pop() ?? (exitCode === 0 ? Translation.tr("Done") : Translation.tr("git failed"));
+            root.needsReload = root.needsReload || last.startsWith("reload:");
+            root.message = last.replace(/^reload:/, "");
             root.state = exitCode === 0 ? WidgetInstaller.State.Done : WidgetInstaller.State.Failed;
         }
     }

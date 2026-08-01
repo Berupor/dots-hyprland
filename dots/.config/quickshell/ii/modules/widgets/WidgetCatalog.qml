@@ -2,6 +2,7 @@ pragma Singleton
 import qs.modules.common
 import Qt.labs.folderlistmodel
 import Quickshell
+import Quickshell.Io
 import QtQuick
 
 /**
@@ -101,6 +102,16 @@ Singleton {
         showDirs: true
         showFiles: false
         onStatusChanged: if (status === FolderListModel.Ready) root.scan()
+    }
+
+    /// An updated widget runs the files the engine already loaded, a reload swaps them.
+    /// Also reachable by hand: `qs -c ii ipc call widgets reload`
+    IpcHandler {
+        target: "widgets"
+
+        function reload(): void {
+            Quickshell.reload(true);
+        }
     }
 
     Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.externalDir])

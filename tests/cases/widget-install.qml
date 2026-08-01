@@ -52,14 +52,14 @@ Item {
                 "want": "hello-clone"
             },
             {
-                "name": "update pulls in its directory",
-                "got": probe.seen.update ?? "",
-                "want": "Already up to date."
+                "name": "update pulls in its directory, a pull that brings nothing asks for nothing",
+                "got": [probe.seen.update ?? "", probe.seen.updateReload ?? true],
+                "want": ["Already up to date.", false]
             },
             {
-                "name": "a new version is reported, with the reload it needs",
-                "got": probe.seen.bumped ?? "",
-                "want": "Updated to 1.1, reload to apply"
+                "name": "a new version is reported, and wants the reload it needs",
+                "got": [probe.seen.bumped ?? "", probe.seen.bumpedReload ?? false],
+                "want": ["Updated to 1.1", true]
             },
             {
                 // By name, not by count: the run is seeded from a real config,
@@ -136,9 +136,11 @@ Item {
                 break;
             case 1:
                 snap.update = WidgetInstaller.message;
+                snap.updateReload = WidgetInstaller.needsReload;
                 break;
             case 2:
                 snap.bumped = WidgetInstaller.message;
+                snap.bumpedReload = WidgetInstaller.needsReload;
                 break;
             }
             probe.seen = Object.assign({}, probe.seen, snap);

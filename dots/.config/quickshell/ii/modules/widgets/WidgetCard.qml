@@ -177,6 +177,19 @@ CatalogCard {
             wrapMode: Text.WordWrap
         }
 
+        RippleButtonWithIcon { // Only on the card that pulled, one reload covers them all
+            visible: WidgetInstaller.needsReload && root.jobMessage !== ""
+            buttonRadius: Appearance.rounding.small
+            colBackground: Appearance.colors.colSecondaryContainer // The move to make now, so not flat like the rest
+            materialIcon: "restart_alt"
+            mainText: Translation.tr("Reload")
+            onClicked: WidgetInstaller.reloadShell()
+
+            StyledToolTip {
+                text: Translation.tr("Restarts the shell, so open panels close")
+            }
+        }
+
         RippleButtonWithIcon {
             buttonRadius: Appearance.rounding.small
             enabled: !WidgetInstaller.busy
