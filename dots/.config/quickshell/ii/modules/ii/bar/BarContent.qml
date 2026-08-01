@@ -192,6 +192,9 @@ Item { // Bar content region
                     delegate: Loader {
                         required property var modelData
                         Layout.alignment: Qt.AlignVCenter
+                        // Indicators hug their glyph, unlike the util buttons and the battery pill
+                        Layout.leftMargin: 4
+                        Layout.rightMargin: 4
                         source: modelData.resolve(modelData.slots.barIndicator)
                         visible: (item?.shown ?? true) && root.useShortenedForm < 2
                         onStatusChanged: if (status === Loader.Error) ErrorReporter.report(modelData.widgetId, `${source} failed to load`)
