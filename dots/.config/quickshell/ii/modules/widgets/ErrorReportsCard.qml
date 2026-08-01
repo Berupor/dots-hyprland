@@ -7,24 +7,17 @@ import qs.modules.widgets
 
 /**
  * Where widget failure reports go. Keys are documented in ErrorReporter.
- * Only the webhook channel is offered here; ntfy and command stay hand-edited.
  */
 CatalogCard {
     id: root
-    readonly property string mode: WidgetsStore.data.errorReports ?? "ask"
-    readonly property string target: WidgetsStore.data.errorReportsTarget ?? ""
+    readonly property bool sending: ErrorReporter.sending
 
     /// Host, so a long url does not push the header around
-    readonly property string summary: {
-        if (root.mode === "never" || root.target === "")
-            return Translation.tr("Nothing leaves this machine");
-        const host = root.target.replace(/^\w+:\/\//, "").split("/")[0];
-        return root.mode === "always" ? Translation.tr("Sent to %1").arg(host) : Translation.tr("Asked before sending to %1").arg(host);
-    }
+    readonly property string host: ErrorReporter.target.replace(/^\w+:\/\//, "").split("/")[0]
 
     icon: "bug_report"
     title: Translation.tr("Error reports")
-    subtitle: root.summary
+    subtitle: root.sending ? Translation.tr("Sent to %1").arg(root.host) : Translation.tr("Nothing leaves this machine")
     iconColor: Appearance.colors.colSecondaryContainer
     iconSymbolColor: Appearance.colors.colOnSecondaryContainer
 
@@ -32,58 +25,30 @@ CatalogCard {
         text: Translation.tr("When a widget fails")
     }
 
-    ConfigSelectionArray {
-        Layout.bottomMargin: 8
-        currentValue: root.mode
-        onSelected: newValue => WidgetsStore.setKey("errorReports", newValue)
-        options: [
-            {
-                displayName: Translation.tr("Ask"),
-                icon: "contact_support",
-                value: "ask",
-                tooltip: Translation.tr("A notification per failure, with the report waiting for your answer")
-            },
-            {
-                displayName: Translation.tr("Send"),
-                icon: "send",
-                value: "always",
-                tooltip: Translation.tr("Sends every failure without asking. Same widget and message goes out once per session")
-            },
-            {
-                displayName: Translation.tr("Never"),
-                icon: "block",
-                value: "never",
-                tooltip: Translation.tr("Nothing leaves this machine; failures still land in the shell log")
-            }
-        ]
+    ConfigSwitch {
+        buttonIcon: "send"
+        text: Translation.tr("Send the failure to the widget author")
+        checked: root.sending
+        onCheckedChanged: WidgetsStore.setKey("errorReports", checked ? "always" : "never")
     }
 
     RowLayout {
         Layout.fillWidth: true
+        Layout.topMargin: 4
         spacing: 8
 
-        MaterialTextArea {
-            id: targetField
+        StyledText {
             Layout.fillWidth: true
-            placeholderText: Translation.tr("URL that takes a POST")
-            text: root.target
-            wrapMode: TextEdit.WrapAnywhere // A URL has nowhere to break by words
-            onTextChanged: {
-                ErrorReporter.testState = ErrorReporter.TestState.Idle;
-                commitTarget.restart();
-            }
-
-            Timer {
-                id: commitTarget
-                interval: 400 // Every keystroke would rewrite widgets.json
-                onTriggered: WidgetsStore.setKey("errorReportsTarget", targetField.text.trim())
-            }
+            text: Translation.tr("The error goes out with the last 100 log lines, window titles and paths included. Same widget and message goes out once per session.")
+            font.pixelSize: Appearance.font.pixelSize.smaller
+            color: Appearance.colors.colSubtext
+            wrapMode: Text.WordWrap
         }
 
         RippleButtonWithIcon {
             Layout.alignment: Qt.AlignVCenter
             buttonRadius: Appearance.rounding.small
-            enabled: root.target !== "" && ErrorReporter.testState !== ErrorReporter.TestState.Sending
+            enabled: ErrorReporter.testState !== ErrorReporter.TestState.Sending
             materialIcon: {
                 switch (ErrorReporter.testState) {
                 case ErrorReporter.TestState.Sent:
@@ -107,17 +72,8 @@ CatalogCard {
             onClicked: ErrorReporter.test()
 
             StyledToolTip {
-                text: Translation.tr("Sends one report as a broken widget would")
+                text: Translation.tr("Sends one report as a broken widget would, whatever the switch says")
             }
         }
-    }
-
-    StyledText {
-        Layout.fillWidth: true
-        Layout.topMargin: 2
-        text: Translation.tr("The error goes out with the last 100 log lines, window titles and paths included. Empty means nothing is ever sent.")
-        font.pixelSize: Appearance.font.pixelSize.smaller
-        color: Appearance.colors.colSubtext
-        wrapMode: Text.WordWrap
     }
 }
