@@ -34,8 +34,6 @@ target, and it asks first.
   - **Peripheral battery**: mice, keyboards, headsets and other bluetooth things, in
     the bar and a right-sidebar tab.
   - **Android webcam**: indicator for a phone attached as a USB webcam.
-  - **Presence**: a room of friends - who's online, what they're playing, shared
-    photos. Client for statusphere; hidden without the cli.
 </details>
 
 <details>
@@ -54,9 +52,12 @@ a `Manifest.qml`; no shared files to edit. The contract is written down in
 ## Install
 
 ```sh
-git clone -b extensions https://github.com/Berupor/dots-hyprland.git
+git clone --recurse-submodules -b extensions https://github.com/Berupor/dots-hyprland.git
 cd dots-hyprland
 ```
+
+Cloned without submodules? `git submodule update --init --recursive`. The shell needs
+`modules/common/widgets/shapes`; empty, every `MaterialShape` user fails to load.
 
 From scratch, upstream's installer takes it from here (packages, services, every
 config - it's a long one):

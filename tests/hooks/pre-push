@@ -19,7 +19,6 @@ PROBES=(
     "peripheralBattery sidebarRightTab -o sidebarTab=true -g 380x420"
     "androidWebcam barIndicator -g 200x60"
     "vpn barUtilButton -g 64x64"
-    "statusphere sidebarLeftTab -g 400x500" # No -S: empty state, no network side effects
 )
 
 if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v qs > /dev/null; then
