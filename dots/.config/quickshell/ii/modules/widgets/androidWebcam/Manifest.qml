@@ -20,6 +20,7 @@ WidgetManifest {
             key: "model",
             type: "textField",
             label: Translation.tr("Only this phone"),
+            icon: "smartphone",
             placeholder: Translation.tr("Any adb device"),
             default: ""
         },

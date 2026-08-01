@@ -64,6 +64,37 @@ Item {
         external: true
     }
 
+    /// Option rows of a card, whatever else its body holds
+    function optionRows(card) {
+        return card.bodyData.filter(o => o.modelData !== undefined).map(o => o.item.contentItem ?? o.item); // ConfigSwitch draws through contentItem
+    }
+
+    /// Where each row puts its label, in card coordinates: the rows line up only if these match
+    function labelXs(card) {
+        const find = (item, want) => {
+            for (const kid of item.children ?? []) {
+                if (kid.text === want)
+                    return kid;
+                const hit = find(kid, want);
+                if (hit)
+                    return hit;
+            }
+            return null;
+        };
+        return probe.optionRows(card).map((row, i) => {
+            const label = find(row, card.drawnOptions[i].label);
+            return label ? Math.round(label.mapToItem(card, 0, 0).x) : -1;
+        });
+    }
+
+    /// And where each row's control ends, for the trailing column
+    function controlRights(card) {
+        return probe.optionRows(card).map(row => {
+            const control = row.children[row.children.length - 1];
+            return Math.round(control.mapToItem(card, 0, 0).x + control.width);
+        });
+    }
+
     /// A contract version relative to this shell's, so a bump does not rewrite the checks
     function contract(dMajor, dMinor) {
         const parts = WidgetCatalog.shellVersion.split(".").map(Number);
@@ -139,6 +170,16 @@ Item {
                 // A type the card cannot draw loads nothing, so the body stays that much shorter
                 "name": "every option type draws a control",
                 "got": (cards.itemAt(3)?.implicitHeight ?? 0) - (cards.itemAt(4)?.implicitHeight ?? 0) > 100,
+                "want": true
+            },
+            {
+                "name": "every row hangs its label on one column",
+                "got": [probe.labelXs(cards.itemAt(3)).length, probe.labelXs(cards.itemAt(3)).every((x, i, xs) => x > 0 && x === xs[0])],
+                "want": [3, true]
+            },
+            {
+                "name": "and its control on one right edge",
+                "got": probe.controlRights(cards.itemAt(3)).every((x, i, xs) => x === xs[0]),
                 "want": true
             }
         ];

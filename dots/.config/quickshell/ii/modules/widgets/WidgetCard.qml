@@ -131,6 +131,9 @@ CatalogCard {
                 return null;
             }
             Layout.fillWidth: true
+            // Margins of the row itself land on the Loader, and ConfigSwitch pads its own
+            Layout.leftMargin: modelData.type === "switch" ? 0 : 8
+            Layout.rightMargin: Layout.leftMargin
             sourceComponent: control
             Component.onCompleted: if (!control) ErrorReporter.report(root.manifest.widgetId, `Unknown option type "${modelData.type}" for "${modelData.key}"`)
 
@@ -157,23 +160,31 @@ CatalogCard {
             }
             Component {
                 id: textOption
-                RowLayout {
+                RowLayout { // Same shape as ConfigSpinBox, so the rows line up
                     spacing: 10
-                    Layout.leftMargin: 8
-                    Layout.rightMargin: 8
 
-                    OptionalMaterialSymbol {
-                        icon: optLoader.modelData.icon ?? ""
+                    RowLayout {
+                        spacing: 10
+
+                        OptionalMaterialSymbol {
+                            icon: optLoader.modelData.icon ?? ""
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: optLoader.modelData.label
+                            color: Appearance.colors.colOnSecondaryContainer
+                            elide: Text.ElideRight
+                        }
                     }
 
-                    StyledText {
-                        text: optLoader.modelData.label
-                        color: Appearance.colors.colOnSecondaryContainer
-                    }
-
-                    MaterialTextField {
+                    ToolbarTextField { // A filled field, as tall as a spin box
                         id: textField
-                        Layout.fillWidth: true
+                        Layout.fillHeight: false
+                        topPadding: 8 // As tall as a spin box
+                        bottomPadding: 8
+                        colBackground: Appearance.colors.colLayer2
+                        color: Appearance.colors.colOnLayer2
                         placeholderText: optLoader.modelData.placeholder ?? ""
                         text: root.manifest.optionValue(optLoader.modelData.key) ?? ""
                         onTextChanged: commitText.restart()
