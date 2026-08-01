@@ -20,6 +20,9 @@
 #                 widget too if its polling waits on the catalog switch
 #   -b color      backdrop behind the item, default the shell background. Items that
 #                 expect a host surface (popup bodies) come out washed out without it
+#   -x dir        install a widget dir into the temp config as an external widget,
+#                 the way ~/.config/illogical-impulse/widgets/ holds one. Path is
+#                 relative to the repo, repeatable, see tests/fixtures/
 #   -S name       symlink ~/.config/<name> into the temp config dir, for widgets
 #                 whose real state lives outside illogical-impulse (accounts,
 #                 tokens). Without it that state reads as empty, which is often
@@ -54,7 +57,8 @@ SLOT=""
 [ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { WIDGET="$1"; shift; }
 [ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { SLOT="$1"; shift; }
 SHARE=()
-while getopts "o:K:p:r:g:s:f:S:b:k" flag; do
+EXTERNAL=()
+while getopts "o:K:p:r:g:s:f:S:b:x:k" flag; do
     case "$flag" in
         o) OPTS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$OPTS") ;;
         K) KEYS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$KEYS") ;;
@@ -64,6 +68,7 @@ while getopts "o:K:p:r:g:s:f:S:b:k" flag; do
         s) SETTLE=$OPTARG ;;
         f) FILE=$OPTARG ;;
         S) SHARE+=("$OPTARG") ;;
+        x) EXTERNAL+=("$OPTARG") ;;
         b) BG=$OPTARG ;;
         k) KEEP=1 ;;
     esac
@@ -94,6 +99,11 @@ jq -c --arg w "$WIDGET" --argjson o "$OPTS" --argjson k "$KEYS" \
     "$HOME/.config/illogical-impulse/widgets.json" > "$CFG/illogical-impulse/widgets.json"
 for name in ${SHARE[@]+"${SHARE[@]}"}; do
     ln -sfn "$HOME/.config/$name" "$CFG/$name"
+done
+for dir in ${EXTERNAL[@]+"${EXTERNAL[@]}"}; do
+    [ "${dir#/}" = "$dir" ] && dir="$REPO/$dir"
+    mkdir -p "$CFG/illogical-impulse/widgets"
+    cp -r "$dir" "$CFG/illogical-impulse/widgets/" || { echo "no such widget dir: $dir"; exit 2; }
 done
 
 LOG="$CFG/probe.log"
