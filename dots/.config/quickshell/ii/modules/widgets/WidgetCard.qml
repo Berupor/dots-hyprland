@@ -34,6 +34,17 @@ Rectangle {
     })
     readonly property var placements: Object.keys(root.manifest.slots).map(s => root.slotNames[s] ?? s)
 
+    /// Subtitle: why it cannot run, or what it does
+    readonly property string statusText: {
+        if (!root.manifest.supported)
+            return Translation.tr("Built for shell %1, this is %2").arg(root.manifest.minShellVersion).arg(WidgetCatalog.shellVersion);
+        if (root.manifest.depsMissing.length > 0)
+            return Translation.tr("Needs %1").arg(root.manifest.depsMissing.join(", "));
+        if (!root.manifest.available)
+            return Translation.tr("Not available on this system");
+        return root.manifest.description;
+    }
+
     /// Where an installed widget sits, so it is clear what to update or delete by hand
     readonly property string originText: {
         const path = FileUtils.trimFileProtocol(String(root.manifest.dir)).replace(FileUtils.trimFileProtocol(Directories.home), "~");
@@ -108,7 +119,7 @@ Rectangle {
                     text: root.manifest.icon
                     iconSize: Appearance.font.pixelSize.hugeass
                     padding: 10
-                    opacity: root.manifest.available ? 1 : 0.4
+                    opacity: root.manifest.usable ? 1 : 0.4
                     color: root.widgetEnabled ? Appearance.colors.colPrimary : Appearance.colors.colSurfaceContainerHighest
                     colSymbol: root.widgetEnabled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurfaceVariant
 
@@ -128,20 +139,14 @@ Rectangle {
                         font.weight: Font.Medium
                         color: Appearance.colors.colOnLayer2
                         elide: Text.ElideRight
-                        opacity: root.manifest.available ? 1 : 0.6
+                        opacity: root.manifest.usable ? 1 : 0.6
                     }
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: {
-                            if (root.manifest.depsMissing.length > 0)
-                                return Translation.tr("Needs %1").arg(root.manifest.depsMissing.join(", "));
-                            if (!root.manifest.available)
-                                return Translation.tr("Not available on this system");
-                            return root.manifest.description;
-                        }
+                        text: root.statusText
                         font.pixelSize: Appearance.font.pixelSize.smaller
-                        color: root.manifest.available ? Appearance.colors.colSubtext : Appearance.colors.colError
+                        color: root.manifest.usable ? Appearance.colors.colSubtext : Appearance.colors.colError
                         wrapMode: Text.WordWrap
                     }
                 }
@@ -182,7 +187,7 @@ Rectangle {
 
                 StyledSwitch {
                     Layout.alignment: Qt.AlignVCenter
-                    enabled: root.manifest.available
+                    enabled: root.manifest.usable
                     checked: root.widgetEnabled
                     onClicked: {
                         WidgetsStore.setEnabled(root.manifest.widgetId, checked);

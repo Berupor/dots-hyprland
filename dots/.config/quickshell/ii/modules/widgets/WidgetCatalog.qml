@@ -13,12 +13,33 @@ Singleton {
     property list<string> brokenViews: []
     readonly property string externalDir: `${Directories.shellConfig}/widgets`
 
+    /// Version of the widget contract, not of the shell: minor up when it grows
+    /// (a slot, a manifest property, an option type), major up when it breaks
+    readonly property string shellVersion: "1.0"
+
     function isEnabled(widgetId) {
         return (WidgetsStore.data.enabled ?? []).includes(widgetId)
     }
 
     function forSlot(slot) {
-        return widgets.filter(w => w.slots[slot] !== undefined && w.available && isEnabled(w.widgetId))
+        return widgets.filter(w => w.slots[slot] !== undefined && w.usable && isEnabled(w.widgetId))
+    }
+
+    /// A widget runs on the contract it was built for: same major, not from the future
+    function supports(minShellVersion) {
+        return String(minShellVersion).split(".")[0] === root.shellVersion.split(".")[0]
+            && root.compareVersions(minShellVersion, root.shellVersion) <= 0
+    }
+
+    /// Dotted numbers, so 1.10 beats 1.9. Returns -1, 0 or 1
+    function compareVersions(a, b) {
+        const pa = String(a).split(".")
+        const pb = String(b).split(".")
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+            const d = (parseInt(pa[i]) || 0) - (parseInt(pb[i]) || 0)
+            if (d !== 0) return d < 0 ? -1 : 1
+        }
+        return 0
     }
 
     /// Widget replacing a host view, null when the built-in one stands

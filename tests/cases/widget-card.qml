@@ -1,7 +1,7 @@
-//@ probe hello -x tests/fixtures/hello -g 560x300 -s 1500
+//@ probe hello -x tests/fixtures/hello -g 560x400 -s 1500
 /**
- * Catalog cards for an installed widget and a bundled one: only the installed
- * one is marked, and its marker says where it sits.
+ * Catalog cards for an installed widget, a bundled one and one built for a shell
+ * that isn't this one: only the installed one is marked, only the last one is barred.
  */
 import qs.modules.widgets
 import QtQuick
@@ -12,6 +12,14 @@ Item {
 
     readonly property var installed: WidgetCatalog.widgets.find(w => w.widgetId === "hello") ?? null
     readonly property var bundled: WidgetCatalog.widgets.find(w => w.widgetId === "androidWebcam") ?? null
+
+    WidgetManifest {
+        id: future
+        widgetId: "future"
+        name: "Future"
+        description: "Asks for a contract this shell does not have"
+        minShellVersion: "9.0"
+    }
 
     function checks() {
         return [
@@ -51,6 +59,32 @@ Item {
                 "name": "a bundled one does not",
                 "got": cards.itemAt(1)?.canExpand ?? true,
                 "want": false
+            },
+            {
+                "name": "dotted versions compare by number",
+                "got": [["1.10", "1.9"], ["1.0", "1.0.0"], ["1.2", "2.0"]].map(p => WidgetCatalog.compareVersions(p[0], p[1])),
+                "want": [1, 0, -1]
+            },
+            {
+                "name": "the contract runs its own major, up to its own version",
+                "got": ["1.0", "0.9", "1.1", "2.0"].map(v => WidgetCatalog.supports(v)),
+                "want": [true, false, false, false]
+            },
+            {
+                // Its deps are fine, the contract is not, and available is the author's to override
+                "name": "a widget from another contract is not usable",
+                "got": [future.available, future.supported, future.usable],
+                "want": [true, false, false]
+            },
+            {
+                "name": "and its card says which contract it wanted",
+                "got": cards.itemAt(2)?.statusText ?? "",
+                "want": "Built for shell 9.0, this is 1.0"
+            },
+            {
+                "name": "a widget that runs shows what it does instead",
+                "got": cards.itemAt(0)?.statusText ?? "",
+                "want": probe.installed?.description ?? ""
             }
         ];
     }
@@ -70,7 +104,7 @@ Item {
 
         Repeater {
             id: cards
-            model: [probe.installed, probe.bundled].filter(m => m !== null)
+            model: [probe.installed, probe.bundled, future].filter(m => m !== null)
             delegate: WidgetCard {
                 required property var modelData
                 manifest: modelData

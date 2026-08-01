@@ -11,7 +11,8 @@ contract that only works outside the shell tree:
 - a sibling type (`HelloBadge`), which resolves with no import at all;
 - a singleton (`HelloState`), which needs the `qmldir` entry next to it - without
   one it still compiles and its properties silently read as empty;
-- an option from the manifest schema, read back through `WidgetCatalog.option`.
+- an option from the manifest schema, read back through `WidgetCatalog.option`;
+- `version` and `minShellVersion`, the pair an installed widget is judged by.
 
 An external widget cannot import its own directory as a module: nothing in the
 shell tree imports it, so `qs.modules.widgets.<id>` is not installed.

@@ -16,6 +16,9 @@ import Quickshell.Io
  *    ContentSubsection, ContentSection is the host's altitude
  * 6. `backgroundWidget` builds on AbstractBackgroundWidget and stays loaded, so gate it
  *    on its own option; `regionAction` exposes `available` and perform(path, x, y, w, h)
+ * 7. `minShellVersion` is the contract you built against (WidgetCatalog.shellVersion).
+ *    A widget asking for a newer one, or for another major, is shown but not loaded.
+ *    Bump your own `version` on every release: the updater reports it
  * A widget can also be installed as ~/.config/illogical-impulse/widgets/<id>/, outside
  * the shell tree, and gets marked as such in the catalog. Same contract, two extras:
  * its own singletons need a `qmldir` next to them (`singleton Foo 1.0 Foo.qml`), and it
@@ -34,6 +37,7 @@ QtObject {
     property string icon: "widgets"
     property string version: "1.0"
     property string author: ""
+    property string minShellVersion: "1.0" // Widget contract this was built against
     property list<string> dependencies: []
     property var slots: ({})
     property var options: []
@@ -43,7 +47,10 @@ QtObject {
 
     property list<string> depsMissing: []
     property bool depsChecked: dependencies.length === 0
+    /// Runs on this system. Widgets override it, hence the separate contract check
     property bool available: depsChecked && depsMissing.length === 0
+    readonly property bool supported: WidgetCatalog.supports(root.minShellVersion)
+    readonly property bool usable: root.available && root.supported
 
     function resolve(rel) {
         return `${dir}/${rel}`

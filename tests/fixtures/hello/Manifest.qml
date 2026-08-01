@@ -9,6 +9,7 @@ WidgetManifest {
     icon: "waving_hand"
     version: "1.0"
     author: "tests"
+    minShellVersion: "1.0"
     slots: ({ "barIndicator": "HelloIndicator.qml" })
     options: [
         {
