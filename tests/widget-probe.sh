@@ -155,6 +155,7 @@ rm -f "$OUT"
 cat > "$CFG/run.sh" <<EOF
 #!/usr/bin/env bash
 export XDG_CONFIG_HOME="$CFG"
+export XDG_CACHE_HOME="$CFG/cache" # A run that caches must not read the last one's, nor the user's
 ${STATE:+export XDG_STATE_HOME="$STATE"}
 $SCALE
 export QS_HARNESS_WIDGET="$WIDGET" QS_HARNESS_SLOT="$SLOT" QS_HARNESS_FILE="$FILE"
