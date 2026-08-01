@@ -70,7 +70,7 @@ their own. The ones that already did, with their own pictures and options:
 
 ```sh
 git clone --recurse-submodules -b extensions https://github.com/Berupor/dots-hyprland-extensions.git
-cd dots-hyprland
+cd dots-hyprland-extensions
 ```
 
 Cloned without submodules? `git submodule update --init --recursive`. The shell needs
