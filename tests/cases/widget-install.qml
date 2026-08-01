@@ -17,6 +17,13 @@ Item {
     property var seen: ({}) // Each step overwrites the singleton, so snapshot as they land
     property int step: 0
 
+    function installedNames() {
+        const names = [];
+        for (let i = 0; i < installed.count; i++)
+            names.push(String(installed.get(i, "fileName")));
+        return names;
+    }
+
     function checks() {
         return [
             {
@@ -55,9 +62,11 @@ Item {
                 "want": "Updated to 1.1, reload to apply"
             },
             {
+                // By name, not by count: the run is seeded from a real config,
+                // which may already have widgets of its own installed
                 "name": "remove takes the directory with it",
-                "got": [probe.seen.removedIds?.includes("hello-clone") ?? true, installed.count],
-                "want": [false, 1]
+                "got": [probe.seen.removedIds?.includes("hello-clone") ?? true, probe.installedNames().includes("hello-clone")],
+                "want": [false, false]
             },
             {
                 "name": "an empty url is refused",
