@@ -112,7 +112,7 @@ cp "$REPO/tests/harness.qml" "$HARNESS"
 CFG=$(mktemp -d /tmp/widget-probe.XXXXXX)
 cp -r "$HOME/.config/illogical-impulse" "$CFG/"
 jq -c --arg w "$WIDGET" --argjson o "$OPTS" --argjson k "$KEYS" --argjson d "$DEFAULTS" \
-    '.errorReportsTarget = "" | . * $k | .enabled = [$w] | .options[$w] = ((if $d == 1 then {} else (.options[$w] // {}) end) * $o)' \
+    '.errorReports = "never" | .errorReportsTarget = "" | . * $k | .enabled = [$w] | .options[$w] = ((if $d == 1 then {} else (.options[$w] // {}) end) * $o)' \
     "$HOME/.config/illogical-impulse/widgets.json" > "$CFG/illogical-impulse/widgets.json"
 for name in ${SHARE[@]+"${SHARE[@]}"}; do
     ln -sfn "$HOME/.config/$name" "$CFG/$name"

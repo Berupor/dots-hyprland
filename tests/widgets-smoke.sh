@@ -107,9 +107,8 @@ fi
 cp "$STORE" "$BAK"
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT TERM # bash would resume the loop otherwise
-# Our own broken widget shouldn't phone home: mode alone is not enough, a prompt
-# from an earlier failure can still be answered mid-run
-jq '.errorReports = "never" | .errorReportsTarget = ""' "$STORE" | write_store
+# Our own broken widget shouldn't phone home
+jq '.errorReports = "never"' "$STORE" | write_store
 
 # --- combos ------------------------------------------------------------------
 combos=("[]")

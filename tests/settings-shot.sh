@@ -38,7 +38,7 @@ sed -i "s/QT_SCALE_FACTOR=1$/QT_SCALE_FACTOR=$SCALE/" "$TMP/ii/settings.qml"
 mkdir -p "$TMP/config" "$TMP/state/quickshell/user/generated"
 cp -r "$HOME/.config/illogical-impulse" "$TMP/config/"
 cp "$REPO/tests/shot-colors.json" "$TMP/state/quickshell/user/generated/colors.json"
-jq -c --argjson e "$ENABLED" '.errorReportsTarget = "" | .enabled = $e' \
+jq -c --argjson e "$ENABLED" '.errorReports = "never" | .errorReportsTarget = "" | .enabled = $e' \
     "$HOME/.config/illogical-impulse/widgets.json" > "$TMP/config/illogical-impulse/widgets.json"
 jq -c '.appearance.transparency.enable = false' "$HOME/.config/illogical-impulse/config.json" \
     > "$TMP/config/illogical-impulse/config.json"
