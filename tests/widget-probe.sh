@@ -23,7 +23,8 @@
 #   -P px         pad the grab by that much, put the item on a Material You
 #                 backdrop and render at 2x: for README shots, see widget-shots.sh
 #   -H host       draw the host around the item in that mode: `bar` for a bar
-#                 strip, `sidebar` for a panel, empty for a plain surface
+#                 strip, `vbar` for the vertical one, `sidebar` for a panel,
+#                 empty for a plain surface
 #   -c colors.json  render with that palette instead of the one your wallpaper
 #                 generated, so a shot looks the same on every machine
 #   -D            start from the schema defaults instead of your stored options,

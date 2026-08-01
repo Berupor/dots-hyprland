@@ -92,27 +92,29 @@ ShellRoot {
             }
 
             // A slot out of its host reads as a slab of nothing, so a shot puts it
-            // back into one: the bar strip, the sidebar panel, or a plain surface
+            // back into one: the bar strip, the vertical bar, the sidebar panel,
+            // or a plain surface
             Rectangle {
                 id: host
                 visible: root.pad > 0
                 x: root.pad
                 y: root.pad
-                width: loader.width + host.hPad * 2
+                width: Math.max(loader.width + host.hPad * 2, root.chrome === "vbar" ? Appearance.sizes.baseVerticalBarWidth : 0)
                 height: Math.max(loader.height + host.vPad * 2, root.chrome === "bar" ? Appearance.sizes.baseBarHeight : 0)
-                radius: root.chrome === "bar" ? Appearance.rounding.small : Appearance.rounding.large
+                radius: host.isBar ? Appearance.rounding.small : Appearance.rounding.large
                 color: Appearance.colors.colLayer0Base
                 border.width: root.chrome === "sidebar" ? 1 : 0
                 border.color: Appearance.colors.colLayer0Border
 
+                readonly property bool isBar: root.chrome === "bar" || root.chrome === "vbar"
                 // Hosts give their content air; without it a shot reads as cramped
-                readonly property int hPad: root.chrome === "bar" ? 24 : 14
-                readonly property int vPad: root.chrome === "bar" ? 0 : 14
+                readonly property int hPad: root.chrome === "bar" ? 24 : host.isBar ? 0 : 14
+                readonly property int vPad: root.chrome === "vbar" ? 24 : host.isBar ? 0 : 14
             }
 
             Loader {
                 id: loader
-                x: root.pad + host.hPad
+                x: host.x + (host.width - loader.width) / 2
                 y: host.y + (host.height - loader.height) / 2
                 width: root.itemW > 0 ? root.itemW : (item?.implicitWidth > 0 ? item.implicitWidth : win.width)
                 height: root.itemH > 0 ? root.itemH : (item?.implicitHeight > 0 ? item.implicitHeight : win.height)

@@ -22,6 +22,7 @@
 # twice. With no shots given they come from <dir>/shots.txt, `#` comments ignored:
 #
 #   barIndicator -n quiet -o incognito=true -g 150x44
+#   barIndicator -n vertical -p vertical=true -H vbar -g 46x120
 #   sidebarLeftTab -g 420x560
 #   -f StatusphereSettings.qml -g 460x520
 #
