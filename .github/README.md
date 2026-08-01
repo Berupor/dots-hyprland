@@ -4,9 +4,32 @@ same installer, same keybinds, same [wiki](https://ii.clsty.link/en/ii-qs/01setu
 For upstream's own feature list and screenshots, see
 [its README](https://github.com/end-4/dots-hyprland/blob/main/.github/README.md).
 
-What the fork tries to add is an extension system for these dots: each widget lives
-in its own folder, gets discovered automatically, and is picked per machine on a
-settings page. Work in progress, expect rough edges.
+The fork adds one thing: an extension system. A widget is a folder with a manifest,
+shipped here or cloned from a url; the shell finds it on its own, the settings app
+lists it, and adding one edits no shared file.
+
+## Status
+
+Two of us run it daily. That is the whole user base and it is not looking for a
+bigger one yet: the fork is out here so the idea can be judged, and so a second
+desk finds what the first one misses. What works today:
+
+- a catalog with a settings page, picks saved per machine, and a widget with a
+  missing dependency saying so instead of turning into a dead button;
+- installing a widget from a git url and updating it from the same page. Three
+  already live in their own repositories;
+- versions on both sides, so a widget built against a different shell is refused
+  instead of half-loaded;
+- probes, assertion cases and a design lint that render a widget in a throwaway
+  shell instance, on a pre-push hook. None of it touches the running session.
+
+The open question is what an upstream merge costs. The fork patches 28 upstream
+files, +525/-45 in total and mostly one hook line each, with everything else in
+files of its own. No upstream release has landed since it branched, so that is an
+intention rather than a measurement. If it holds through a few of them and through
+daily use, the next step is an RFC for
+[#3073](https://github.com/end-4/dots-hyprland/issues/3073), where a plugin system
+was asked for and none has been written yet.
 
 ## Branches
 
@@ -18,36 +41,34 @@ settings page. Work in progress, expect rough edges.
 ## Widgets
 
 All widgets ship disabled. The settings app has a Widgets page that lists them with
-their options; widgets with missing dependencies say so instead of turning into dead
-buttons. Picks are saved to `~/.config/illogical-impulse/widgets.json`, which nothing
-else touches.
+their options; picks are saved to `~/.config/illogical-impulse/widgets.json`, which
+nothing else touches. The same page can point widget failures at an ntfy topic, a
+webhook or a command: it sends the error plus the last 100 log lines, so nothing
+goes out until you fill in a target, and it asks first.
 
-The same page can point widget failures at an ntfy topic, a webhook or a command. It
-sends the error plus the last 100 log lines, so nothing goes out until you fill in a
-target, and it asks first.
+![The Widgets page](assets/widgets-page.png)
 
-<details open>
-  <summary>In the catalog</summary>
+The folder icon marks a widget installed from a url rather than shipped here; the
+one greyed out says why it cannot run on this machine instead of failing quietly.
 
-  - **GPU monitor**: usage circle next to CPU/RAM, popup columns for load, VRAM and
-    temperature.
-  - **Peripheral battery**: mice, keyboards, headsets and other bluetooth things, in
-    the bar and a right-sidebar tab.
-  - **Android webcam**: indicator for a phone attached as a USB webcam.
-</details>
+A few small ones ship with the shell and will likely move out into repositories of
+their own. The ones that already did, with their own pictures and options:
 
-<details>
-  <summary>Not widgets, just patches</summary>
+- [Peripheral battery](https://github.com/Berupor/ii-widget-peripheral-battery):
+  mice, keyboards, headsets and other bluetooth things, in the bar and a
+  right-sidebar tab.
+- [Statusphere](https://github.com/Berupor/ii-widget-statusphere): a room of
+  friends on the desktop, client for
+  [statusphere](https://github.com/MAX1T1A/statusphere).
+- [Hello](https://github.com/Berupor/ii-widget-hello): the template to copy when
+  writing your own.
 
-  - Lock screen: opaque surface with its own blurred wallpaper, no window flash on
-    resume; fingerprint re-arms after an unrecognized read.
-  - Even spacing around the bar media and clock modules.
-  - Screenshot annotation defaults to `satty`.
-</details>
+## Not widgets, just patches
 
-A widget is one folder under `dots/.config/quickshell/ii/modules/widgets/<id>/` with
-a `Manifest.qml`; no shared files to edit. The contract is written down in
-`modules/widgets/WidgetManifest.qml`.
+- Lock screen: opaque surface with its own blurred wallpaper, no window flash on
+  resume; fingerprint re-arms after an unrecognized read.
+- Even spacing around the bar media and clock modules.
+- Screenshot annotation defaults to `satty`.
 
 ## Install
 
@@ -81,11 +102,12 @@ disabled, and `satty` is the only new default (screenshot annotation, switch it 
 settings if you don't have it).
 
 `./setup install-files` sits in between: all the config files, no packages. Take that
-one instead of the rsync if your dots predate this branch's merge base, 2026-07-27,
-since the shell alone would end up newer than everything around it:
+one instead of the rsync if your dots are older than this branch's merge base, since
+the shell alone would end up newer than everything around it. Compare the two dates:
 
 ```sh
 git -C /path/to/your/dots-hyprland log -1 --date=short --format='%ad %s'
+git log -1 --date=short --format='%ad %s' origin/main   # the upstream mirror, see Branches
 ```
 
 Clashing files go to `~/ii-original-dots-backup`.
@@ -106,6 +128,26 @@ rsync -a --delete dots/.config/quickshell/ii/ ~/.config/quickshell/ii/
 
 Either way, `rm ~/.config/illogical-impulse/widgets.json` forgets the widget picks.
 Your `config.json` survives both directions - upstream skips the keys it doesn't know.
+
+## Writing a widget
+
+One folder with a `Manifest.qml`: `dots/.config/quickshell/ii/modules/widgets/<id>/`
+here, or `~/.config/illogical-impulse/widgets/<id>/` for one of your own. It declares
+its slots, its options and the binaries it needs, and the settings page draws the
+options for you. The contract is written down in `modules/widgets/WidgetManifest.qml`;
+[ii-widget-hello](https://github.com/Berupor/ii-widget-hello) is the smallest widget
+that covers all of it, made to be copied.
+
+Colors and fonts come from `Appearance.*`, generated from the wallpaper, so a widget
+that hardcodes them looks wrong on everyone else's desktop and the lint says so. The
+same toolkit that checks this fork checks yours:
+
+```sh
+tests/widget-probe.sh <widget> <slot> [-x /path/to/your/widget]   # render it, alone
+tests/qml-cases.sh    -x /path/to/your/widget                     # its demo scenes as tests
+tests/widget-shots.sh -x /path/to/your/widget                     # README pictures
+tests/design-lint.sh  /path/to/your/widget                        # the color contract
+```
 
 ## Pulling upstream
 

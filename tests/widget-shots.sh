@@ -65,6 +65,8 @@ fi
 
 [ -z "$OUTDIR" ] && OUTDIR="${XDIR:+$XDIR/docs}"
 [ -z "$OUTDIR" ] && OUTDIR="/tmp/widget-shots"
+# The instance renders with a cwd of its own, so a relative -d would save nowhere
+[ "${OUTDIR#/}" = "$OUTDIR" ] && OUTDIR="$PWD/$OUTDIR"
 mkdir -p "$OUTDIR"
 [ "$COLORS" = none ] && COLORS=""
 
