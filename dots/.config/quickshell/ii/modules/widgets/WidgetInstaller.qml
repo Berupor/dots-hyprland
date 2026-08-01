@@ -1,4 +1,5 @@
 pragma Singleton
+import qs.modules.common
 import qs.services
 import Quickshell
 import Quickshell.Io
@@ -40,22 +41,24 @@ Singleton {
         return name !== "" && !name.includes("/") && !name.startsWith(".");
     }
 
+    /// Clones aside, names the directory after the widget id, then moves it in
     function install(url) {
-        const id = root.idFor(url);
-        if (String(url).trim() === "" || !root.sane(id)) {
+        if (String(url).trim() === "") {
             root.fail("", Translation.tr("Enter a repository url"));
             return;
         }
-        root.run("", ["env", `IU=${String(url).trim()}`, `IN=${id}`, `IW=${WidgetCatalog.externalDir}`, "bash", "-c", `
+        root.run("", ["env", `IU=${String(url).trim()}`, `IN=${root.idFor(url)}`, `IW=${WidgetCatalog.externalDir}`, `IS=${Directories.shellConfig}/.widget-install`, "bash", "-c", `
             set -e
-            case "$IN" in */*|.*|"") echo "Bad repository name"; exit 1;; esac
-            d="$IW/$IN"
-            if [ -e "$d" ]; then echo "Already installed: $IN"; exit 1; fi
+            rm -rf -- "$IS" # Staging sits outside the widget dir: a half clone is not a widget
             mkdir -p "$IW"
-            git clone --depth 1 -- "$IU" "$d" 2>&1
-            # Only ever the directory git just made, and only when it is not a widget
-            if [ ! -f "$d/Manifest.qml" ]; then rm -rf -- "$d"; echo "No Manifest.qml in $IN"; exit 1; fi
-            echo "Installed $IN"`]);
+            git clone --depth 1 -- "$IU" "$IS" 2>&1
+            if [ ! -f "$IS/Manifest.qml" ]; then rm -rf -- "$IS"; echo "No Manifest.qml in $IN"; exit 1; fi
+            id=$(sed -n 's/.*widgetId:[[:space:]]*"\\([^"]*\\)".*/\\1/p' "$IS/Manifest.qml" | head -1)
+            [ -n "$id" ] || id="$IN" # No literal in the manifest, fall back to the repo name
+            case "$id" in */*|.*|"") rm -rf -- "$IS"; echo "Bad widget id"; exit 1;; esac
+            if [ -e "$IW/$id" ]; then rm -rf -- "$IS"; echo "Already installed: $id"; exit 1; fi
+            mv -- "$IS" "$IW/$id"
+            echo "Installed $id"`]);
     }
 
     function update(widgetId) {

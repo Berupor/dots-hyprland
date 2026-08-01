@@ -12,7 +12,8 @@ import QtQuick
 Item {
     id: probe
 
-    readonly property string source: `${Directories.shellConfig}/installer-src/hello-clone`
+    // Repo name on purpose different from the widget id inside it
+    readonly property string source: `${Directories.shellConfig}/installer-src/some-repo`
     property var seen: ({}) // Each step overwrites the singleton, so snapshot as they land
     property int step: 0
 
@@ -37,6 +38,11 @@ Item {
                 "name": "the catalog picks it up with no reload",
                 "got": probe.seen.installedIds?.includes("hello-clone") ?? false,
                 "want": true
+            },
+            {
+                "name": "the directory is named after the widget id, not the repo",
+                "got": (probe.seen.installedDir ?? "").replace(/^.*\/widgets\//, ""),
+                "want": "hello-clone"
             },
             {
                 "name": "update pulls in its directory",
@@ -122,7 +128,10 @@ Item {
             const ids = WidgetCatalog.widgets.map(w => w.widgetId);
             switch (probe.step) {
             case 1:
-                probe.seen = Object.assign({}, probe.seen, { "installedIds": ids });
+                probe.seen = Object.assign({}, probe.seen, {
+                    "installedIds": ids,
+                    "installedDir": String(WidgetCatalog.widgets.find(w => w.widgetId === "hello-clone")?.dir ?? "")
+                });
                 WidgetInstaller.update("hello-clone");
                 break;
             case 2:
