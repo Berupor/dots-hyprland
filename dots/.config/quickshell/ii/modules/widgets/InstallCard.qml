@@ -11,6 +11,7 @@ import qs.modules.widgets
  */
 CatalogCard {
     id: root
+    readonly property string templateUrl: "https://github.com/Berupor/ii-widget-hello"
     readonly property bool installing: WidgetInstaller.busy && WidgetInstaller.job === ""
     readonly property bool failed: WidgetInstaller.job === "" && WidgetInstaller.state === WidgetInstaller.State.Failed
 
@@ -52,9 +53,14 @@ CatalogCard {
     StyledText {
         Layout.fillWidth: true
         Layout.topMargin: 2
-        text: Translation.tr("A widget is part of the shell once installed and runs with it. Install what you would run yourself.")
+        // The link fills the field above rather than opening a page: nothing else to do with it here
+        text: Translation.tr("A widget is part of the shell once installed and runs with it. Install what you would run yourself, or start with %1.").arg(`[hello](${root.templateUrl})`)
         font.pixelSize: Appearance.font.pixelSize.smaller
         color: Appearance.colors.colSubtext
+        textFormat: Text.MarkdownText
         wrapMode: Text.WordWrap
+        onLinkActivated: link => urlField.text = link
+
+        PointingHandLinkHover {}
     }
 }
