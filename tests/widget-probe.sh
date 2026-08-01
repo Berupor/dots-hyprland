@@ -30,7 +30,8 @@
 #                 for runs whose output should not depend on this machine
 #   -x dir        install a widget dir into the temp config as an external widget,
 #                 the way ~/.config/illogical-impulse/widgets/ holds one. Path is
-#                 relative to the repo, repeatable, see tests/fixtures/
+#                 relative to the repo, repeatable, see tests/fixtures/. It goes in
+#                 under its manifest id, shadowing a copy you have installed
 #   -S name       symlink ~/.config/<name> into the temp config dir, for widgets
 #                 whose real state lives outside illogical-impulse (accounts,
 #                 tokens). Without it that state reads as empty, which is often
@@ -116,11 +117,22 @@ jq -c --arg w "$WIDGET" --argjson o "$OPTS" --argjson k "$KEYS" --argjson d "$DE
 for name in ${SHARE[@]+"${SHARE[@]}"}; do
     ln -sfn "$HOME/.config/$name" "$CFG/$name"
 done
+widget_id() { # Manifest id of a widget dir, its folder name as the fallback
+    local id
+    id=$(sed -n 's/^[[:space:]]*widgetId:[[:space:]]*"\([^"]*\)".*/\1/p' "$1/Manifest.qml" 2>/dev/null | head -1)
+    echo "${id:-$(basename "$1")}"
+}
 for dir in ${EXTERNAL[@]+"${EXTERNAL[@]}"}; do
     [ "${dir#/}" = "$dir" ] && dir="$REPO/$dir"
     [ -d "$dir" ] || { echo "no such widget dir: $dir"; exit 2; }
+    # By id, not by folder name: the seeded config carries the same widget installed,
+    # and two manifests with one id leave the catalog on the installed copy
+    id=$(widget_id "$dir")
+    for seeded in "$CFG"/illogical-impulse/widgets/*/; do
+        [ -d "$seeded" ] && [ "$(widget_id "$seeded")" = "$id" ] && rm -rf "$seeded"
+    done
     # Not cp: an installed widget is a clone, and git's read-only packs break it
-    dest="$CFG/illogical-impulse/widgets/$(basename "$dir")"
+    dest="$CFG/illogical-impulse/widgets/$id"
     mkdir -p "$dest"
     (cd "$dir" && tar --exclude=.git -cf - .) | (cd "$dest" && tar -xf -)
 done

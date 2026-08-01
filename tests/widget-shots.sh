@@ -7,7 +7,8 @@
 #   tests/widget-shots.sh [-x dir] [-w widget] [-d outdir] [-P px] ["<slot> [flags]" ...]
 #
 #   -x dir     widget directory to install into the run, the way an external
-#              widget sits in ~/.config/illogical-impulse/widgets/
+#              widget sits in ~/.config/illogical-impulse/widgets/. It shadows the
+#              copy you have installed, so slot shots come from the dir you edit
 #   -w widget  widget id, default: read from <dir>/Manifest.qml
 #   -d outdir  where the pngs land, default <dir>/docs, else /tmp/widget-shots
 #   -P px      padding around the item, default 28
