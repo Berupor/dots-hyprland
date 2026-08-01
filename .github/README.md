@@ -15,8 +15,8 @@ What works today:
 
 - a catalog with a settings page: widgets are picked per machine, and a widget
   whose dependency is missing says so on its card;
-- installing a widget from a git url and updating it from the same page. Four
-  already live in their own repositories;
+- installing a widget from a git url and updating it from the same page. Every
+  widget I have written lives in its own repository;
 - versions on both sides, so a widget built against a shell it does not know stays
   off;
 - probes, assertion cases and a design lint that render a widget in a throwaway
@@ -50,12 +50,14 @@ Set `errorReportsTarget` in the same json to post them to a receiver of your own
 The folder icon marks a widget installed from a url. A greyed out card carries the
 reason: a missing binary, or a shell version it was not built for.
 
-One small one still ships with the shell and will likely move out too. The ones
-that already did, with their own pictures and options:
+Nothing ships with the shell itself; every widget below is installed from its own
+repository, with its own pictures and options:
 
 - [Peripheral battery](https://github.com/Berupor/ii-widget-peripheral-battery):
   mice, keyboards, headsets and other bluetooth things, in the bar and a
   right-sidebar tab.
+- [Android webcam](https://github.com/Berupor/ii-widget-android-webcam): a phone
+  plugged in as a USB webcam, and the adb call that puts it in that mode.
 - [Statusphere](https://github.com/Berupor/ii-widget-statusphere): a room of
   friends on the desktop, client for
   [statusphere](https://github.com/MAX1T1A/statusphere).
