@@ -10,26 +10,23 @@ lists it, and adding one edits no shared file.
 
 ## Status
 
-Two of us run it daily. That is the whole user base and it is not looking for a
-bigger one yet: the fork is out here so the idea can be judged, and so a second
-desk finds what the first one misses. What works today:
+I run it daily, and so does a friend of mine. That is the whole user base for now.
+What works today:
 
-- a catalog with a settings page, picks saved per machine, and a widget with a
-  missing dependency saying so instead of turning into a dead button;
+- a catalog with a settings page: widgets are picked per machine, and a widget
+  whose dependency is missing says so on its card;
 - installing a widget from a git url and updating it from the same page. Three
   already live in their own repositories;
-- versions on both sides, so a widget built against a different shell is refused
-  instead of half-loaded;
+- versions on both sides, so a widget built against a shell it does not know stays
+  off;
 - probes, assertion cases and a design lint that render a widget in a throwaway
-  shell instance, on a pre-push hook. None of it touches the running session.
+  shell instance, on a pre-push hook. The running session is never touched.
 
 The open question is what an upstream merge costs. The fork patches 28 upstream
-files, +525/-45 in total and mostly one hook line each, with everything else in
-files of its own. No upstream release has landed since it branched, so that is an
-intention rather than a measurement. If it holds through a few of them and through
-daily use, the next step is an RFC for
-[#3073](https://github.com/end-4/dots-hyprland/issues/3073), where a plugin system
-was asked for and none has been written yet.
+files, +525/-45 in total, mostly a hook line each, and keeps the rest in files of
+its own. No upstream release has landed since it branched, so there is nothing to
+show yet. If merges stay cheap through a few of them, the next step is an RFC for
+[#3073](https://github.com/end-4/dots-hyprland/issues/3073).
 
 ## Branches
 
@@ -48,8 +45,8 @@ goes out until you fill in a target, and it asks first.
 
 ![The Widgets page](assets/widgets-page.png)
 
-The folder icon marks a widget installed from a url rather than shipped here; the
-one greyed out says why it cannot run on this machine instead of failing quietly.
+The folder icon marks a widget installed from a url. A greyed out card carries the
+reason: a missing binary, or a shell version it was not built for.
 
 A few small ones ship with the shell and will likely move out into repositories of
 their own. The ones that already did, with their own pictures and options:
@@ -140,7 +137,7 @@ that covers all of it, made to be copied.
 
 Colors and fonts come from `Appearance.*`, generated from the wallpaper, so a widget
 that hardcodes them looks wrong on everyone else's desktop and the lint says so. The
-same toolkit that checks this fork checks yours:
+fork's own toolkit works on a widget outside it too:
 
 ```sh
 tests/widget-probe.sh <widget> <slot> [-x /path/to/your/widget]   # render it, alone

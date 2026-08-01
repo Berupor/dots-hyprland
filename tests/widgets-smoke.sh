@@ -10,7 +10,9 @@ WDIR="$REPO/dots/.config/quickshell/ii/modules/widgets"
 STORE="$HOME/.config/illogical-impulse/widgets.json"
 BAK="$STORE.smoke-bak"
 LIVE="$HOME/.config/quickshell/ii/modules/widgets"
-SETTLE=3
+POLL=0.2
+QUIET=2  # consecutive quiet polls to call a reload settled
+CAP=15   # poll ceiling, same 3s worst case as the old flat sleep
 FAIL=0
 ERRS="ERROR|TypeError|Unable to assign|is not a type|not installed|failed to load"
 NOISE="ToolbarTabBar.qml\[59" # Upstream, fires on every tab rebuild
@@ -56,12 +58,32 @@ set_enabled() {
     jq --argjson e "$1" '.enabled = $e' "$STORE" | write_store
 }
 
+# Polls until quiet instead of a flat sleep: most reloads settle in a couple
+# hundred ms, so this only spends the full CAP on combos that actually need it
+wait_settle() {
+    local last=-1 cur quiet=0 i
+    for ((i = 0; i < CAP; i++)); do
+        sleep "$POLL"
+        cur=$(wc -l < "$LOGF")
+        if [ "$cur" = "$last" ]; then
+            quiet=$((quiet + 1))
+            [ "$quiet" -ge "$QUIET" ] && return
+        else
+            quiet=0
+        fi
+        last=$cur
+    done
+}
+
 restore() { # The shell keeps widgets.json in memory and rewrites it whole on any
     [ -f "$BAK" ] || return 0 # UI change, so one write can lose the race
     rm -rf "$LIVE/zbroken"
     for _ in 1 2 3; do
         write_store < "$BAK"
-        sleep "$SETTLE"
+        for ((i = 0; i < CAP; i++)); do
+            sleep "$POLL"
+            cmp -s <(jq -S . "$BAK") <(jq -S . "$STORE") && break
+        done
         if cmp -s <(jq -S . "$BAK") <(jq -S . "$STORE"); then
             rm -f "$BAK"
             echo "restored widgets.json"
@@ -71,13 +93,20 @@ restore() { # The shell keeps widgets.json in memory and rewrites it whole on an
     echo "WARN could not restore widgets.json, backup kept at $BAK"
 }
 
+# One `qs log` process feeds this file; querying it directly beats the ~1s
+# cost of a fresh `qs log` dump (and growing) on every combo
+LOGF=$(mktemp)
+qs -c ii log -f -t 1 > "$LOGF" 2>&1 &
+LOGPID=$!
+cleanup() { kill "$LOGPID" 2>/dev/null; rm -f "$LOGF"; restore; }
+
 if [ -f "$BAK" ]; then # Killed run, its backup is the real state
     echo "leftover $BAK, restoring it first"
     restore
 fi
 cp "$STORE" "$BAK"
-trap restore EXIT
-trap 'restore; exit 130' INT TERM # bash would resume the loop otherwise
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT TERM # bash would resume the loop otherwise
 # Our own broken widget shouldn't phone home: mode alone is not enough, a prompt
 # from an earlier failure can still be answered mid-run
 jq '.errorReports = "never" | .errorReportsTarget = ""' "$STORE" | write_store
@@ -94,13 +123,13 @@ done
 
 echo "running ${#combos[@]} combos..."
 for combo in "${combos[@]}"; do
-    n=$(qs -c ii log 2>/dev/null | wc -l)
+    n=$(wc -l < "$LOGF")
     set_enabled "$combo"
-    sleep "$SETTLE"
-    errs=$(qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -E "$ERRS" | grep -cvE "$NOISE")
+    wait_settle
+    errs=$(tail -n +$((n + 1)) "$LOGF" | grep -E "$ERRS" | grep -cvE "$NOISE")
     if [ "$errs" -gt 0 ]; then
         printf 'FAIL %-60s %s new errors\n' "$combo" "$errs"
-        qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -E "$ERRS" | grep -vE "$NOISE" | head -3
+        tail -n +$((n + 1)) "$LOGF" | grep -E "$ERRS" | grep -vE "$NOISE" | head -3
         FAIL=1
     else
         printf 'ok   %s\n' "$combo"
@@ -110,14 +139,14 @@ done
 # --- broken widget isolation -------------------------------------------------
 if [ "${1:-}" = "--broken" ]; then
     echo "dropping a corrupt widget..."
-    n=$(qs -c ii log 2>/dev/null | wc -l)
+    n=$(wc -l < "$LOGF")
     mkdir -p "$LIVE/zbroken"
     echo "syntax error {" > "$LIVE/zbroken/Manifest.qml"
-    sleep "$SETTLE"
+    wait_settle
     if ! pgrep -x qs > /dev/null; then
         echo "FAIL shell died on a broken widget"
         FAIL=1
-    elif ! qs -c ii log 2>/dev/null | tail -n +$((n + 1)) | grep -q "ErrorReporter\] zbroken"; then
+    elif ! tail -n +$((n + 1)) "$LOGF" | grep -q "ErrorReporter\] zbroken"; then
         echo "FAIL broken widget not reported"
         FAIL=1
     else
