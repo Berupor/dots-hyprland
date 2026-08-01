@@ -27,6 +27,8 @@ ShellRoot {
     property int itemW: parseInt(Quickshell.env("QS_HARNESS_IW") ?? "0")
     property int itemH: parseInt(Quickshell.env("QS_HARNESS_IH") ?? "0")
     property string bg: Quickshell.env("QS_HARNESS_BG") ?? ""
+    property int pad: parseInt(Quickshell.env("QS_HARNESS_PAD") ?? "0") // Shot mode, see widget-shots.sh
+    property string chrome: Quickshell.env("QS_HARNESS_CHROME") ?? "" // Host to draw around the item
 
     readonly property var manifest: WidgetCatalog.widgets.find(w => w.widgetId === root.widgetId) ?? null
     readonly property string source: {
@@ -38,6 +40,9 @@ ShellRoot {
         if (!entry) return "";
         return root.manifest.resolve(entry.path ?? entry);
     }
+
+    // Lazy singleton: without this the run renders in Appearance's grey fallback
+    Component.onCompleted: MaterialThemeLoader.reapplyTheme()
 
     onSourceChanged: if (source) {
         console.log(`[harness] source ${source}`)
@@ -65,12 +70,50 @@ ShellRoot {
         // Opaque, so items that count on a host surface don't grab as washed-out alpha
         Rectangle {
             id: stage
-            implicitWidth: loader.width
-            implicitHeight: loader.height
+            implicitWidth: host.width + root.pad * 2
+            implicitHeight: host.height + root.pad * 2
+            radius: root.pad > 0 ? Appearance.rounding.verylarge : 0
             color: root.bg !== "" ? root.bg : Appearance.colors.colLayer0
+
+            Rectangle { // Flat colLayer0 reads as dead in a README, so shots get depth
+                anchors.fill: parent
+                radius: parent.radius
+                visible: root.pad > 0 && root.bg === ""
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0
+                        color: Appearance.colors.colPrimaryContainer
+                    }
+                    GradientStop {
+                        position: 1
+                        color: Appearance.colors.colSecondaryContainer
+                    }
+                }
+            }
+
+            // A slot out of its host reads as a slab of nothing, so a shot puts it
+            // back into one: the bar strip, the sidebar panel, or a plain surface
+            Rectangle {
+                id: host
+                visible: root.pad > 0
+                x: root.pad
+                y: root.pad
+                width: loader.width + host.hPad * 2
+                height: Math.max(loader.height + host.vPad * 2, root.chrome === "bar" ? Appearance.sizes.baseBarHeight : 0)
+                radius: root.chrome === "bar" ? Appearance.rounding.small : Appearance.rounding.large
+                color: Appearance.colors.colLayer0Base
+                border.width: root.chrome === "sidebar" ? 1 : 0
+                border.color: Appearance.colors.colLayer0Border
+
+                // Hosts give their content air; without it a shot reads as cramped
+                readonly property int hPad: root.chrome === "bar" ? 24 : 14
+                readonly property int vPad: root.chrome === "bar" ? 0 : 14
+            }
 
             Loader {
                 id: loader
+                x: root.pad + host.hPad
+                y: host.y + (host.height - loader.height) / 2
                 width: root.itemW > 0 ? root.itemW : (item?.implicitWidth > 0 ? item.implicitWidth : win.width)
                 height: root.itemH > 0 ? root.itemH : (item?.implicitHeight > 0 ? item.implicitHeight : win.height)
 
@@ -104,6 +147,7 @@ ShellRoot {
                     console.log(`[harness] probe ${path} = ${JSON.stringify(value)}`)
                 }
                 console.log(`[harness] size ${loader.width}x${loader.height}`)
+                // Shots render at QT_SCALE_FACTOR=2, so the grab is already crisp
                 stage.grabToImage(res => {
                     console.log(`[harness] png ${res.saveToFile(root.out) ? "ok" : "FAIL"} ${root.out}`)
                     console.log("[harness] done")

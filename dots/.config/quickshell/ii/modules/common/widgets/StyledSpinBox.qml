@@ -35,7 +35,10 @@ SpinBox {
             font.pixelSize: Appearance.font.pixelSize.small
             validator: root.validator
             onTextChanged: {
-                root.value = parseFloat(text);
+                // Only when typed in: assigning kills the value binding, and a value
+                // that arrives late (widget options, after the catalog scan) never lands
+                if (labelText.activeFocus)
+                    root.value = parseFloat(text);
             }
         }
     }

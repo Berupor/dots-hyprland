@@ -20,6 +20,14 @@
 #                 widget too if its polling waits on the catalog switch
 #   -b color      backdrop behind the item, default the shell background. Items that
 #                 expect a host surface (popup bodies) come out washed out without it
+#   -P px         pad the grab by that much, put the item on a Material You
+#                 backdrop and render at 2x: for README shots, see widget-shots.sh
+#   -H host       draw the host around the item in that mode: `bar` for a bar
+#                 strip, `sidebar` for a panel, empty for a plain surface
+#   -c colors.json  render with that palette instead of the one your wallpaper
+#                 generated, so a shot looks the same on every machine
+#   -D            start from the schema defaults instead of your stored options,
+#                 for runs whose output should not depend on this machine
 #   -x dir        install a widget dir into the temp config as an external widget,
 #                 the way ~/.config/illogical-impulse/widgets/ holds one. Path is
 #                 relative to the repo, repeatable, see tests/fixtures/
@@ -49,6 +57,10 @@ IW=640
 IH=360
 SETTLE=1200
 BG=""
+PAD=0
+CHROME=""
+COLORS=""
+DEFAULTS=0
 FAIL=0
 
 WIDGET=""
@@ -58,7 +70,7 @@ SLOT=""
 [ "${1:-}" ] && [ "${1#-}" = "${1:-}" ] && { SLOT="$1"; shift; }
 SHARE=()
 EXTERNAL=()
-while getopts "o:K:p:r:g:s:f:S:b:x:k" flag; do
+while getopts "o:K:p:r:g:s:f:S:b:x:P:H:c:Dk" flag; do
     case "$flag" in
         o) OPTS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$OPTS") ;;
         K) KEYS=$(jq -c --arg k "${OPTARG%%=*}" --arg v "${OPTARG#*=}" '.[$k] = (try ($v|fromjson) catch $v)' <<< "$KEYS") ;;
@@ -70,6 +82,10 @@ while getopts "o:K:p:r:g:s:f:S:b:x:k" flag; do
         S) SHARE+=("$OPTARG") ;;
         x) EXTERNAL+=("$OPTARG") ;;
         b) BG=$OPTARG ;;
+        P) PAD=$OPTARG ;;
+        H) CHROME=$OPTARG ;;
+        c) COLORS=$OPTARG ;;
+        D) DEFAULTS=1 ;;
         k) KEEP=1 ;;
     esac
 done
@@ -94,8 +110,8 @@ cp "$REPO/tests/harness.qml" "$HARNESS"
 # nothing we write lands in the live config
 CFG=$(mktemp -d /tmp/widget-probe.XXXXXX)
 cp -r "$HOME/.config/illogical-impulse" "$CFG/"
-jq -c --arg w "$WIDGET" --argjson o "$OPTS" --argjson k "$KEYS" \
-    '.errorReportsTarget = "" | . * $k | .enabled = [$w] | .options[$w] = ((.options[$w] // {}) * $o)' \
+jq -c --arg w "$WIDGET" --argjson o "$OPTS" --argjson k "$KEYS" --argjson d "$DEFAULTS" \
+    '.errorReportsTarget = "" | . * $k | .enabled = [$w] | .options[$w] = ((if $d == 1 then {} else (.options[$w] // {}) end) * $o)' \
     "$HOME/.config/illogical-impulse/widgets.json" > "$CFG/illogical-impulse/widgets.json"
 for name in ${SHARE[@]+"${SHARE[@]}"}; do
     ln -sfn "$HOME/.config/$name" "$CFG/$name"
@@ -106,15 +122,30 @@ for dir in ${EXTERNAL[@]+"${EXTERNAL[@]}"}; do
     cp -r "$dir" "$CFG/illogical-impulse/widgets/" || { echo "no such widget dir: $dir"; exit 2; }
 done
 
+# Generated colors live in the state dir, not the config one, so they need their own move
+STATE=""
+if [ -n "$COLORS" ]; then
+    [ "${COLORS#/}" = "$COLORS" ] && COLORS="$REPO/$COLORS"
+    [ -f "$COLORS" ] || { echo "no such palette: $COLORS"; exit 2; }
+    STATE="$CFG/state"
+    mkdir -p "$STATE/quickshell/user/generated"
+    cp "$COLORS" "$STATE/quickshell/user/generated/colors.json"
+fi
+
+SCALE=""
+[ "$PAD" -gt 0 ] && SCALE="export QT_SCALE_FACTOR=2 # A shot is rendered at 2x, not upscaled after"
+
 LOG="$CFG/probe.log"
 rm -f "$OUT"
 cat > "$CFG/run.sh" <<EOF
 #!/usr/bin/env bash
 export XDG_CONFIG_HOME="$CFG"
+${STATE:+export XDG_STATE_HOME="$STATE"}
+$SCALE
 export QS_HARNESS_WIDGET="$WIDGET" QS_HARNESS_SLOT="$SLOT" QS_HARNESS_FILE="$FILE"
 export QS_HARNESS_OUT="$OUT" QS_HARNESS_SETTLE="$SETTLE"
 export QS_HARNESS_IW="$IW" QS_HARNESS_IH="$IH" QS_HARNESS_W=8 QS_HARNESS_H=8
-export QS_HARNESS_PROPS='$PROPS' QS_HARNESS_PROBE='$PROBE' QS_HARNESS_BG="$BG"
+export QS_HARNESS_PROPS='$PROPS' QS_HARNESS_PROBE='$PROBE' QS_HARNESS_BG="$BG" QS_HARNESS_PAD="$PAD" QS_HARNESS_CHROME="$CHROME"
 exec timeout 40 qs -p "$HARNESS"
 EOF
 chmod +x "$CFG/run.sh"
