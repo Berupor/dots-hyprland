@@ -7,7 +7,6 @@ RowLayout {
     id: root
     property string text: ""
     property string icon
-    property bool hovered: hoverHandler.hovered // StyledToolTip stays up without it
     property alias value: spinBoxWidget.value
     property alias stepSize: spinBoxWidget.stepSize
     property alias from: spinBoxWidget.from
@@ -15,10 +14,6 @@ RowLayout {
     spacing: 10
     Layout.leftMargin: 8
     Layout.rightMargin: 8
-
-    HoverHandler {
-        id: hoverHandler
-    }
 
     RowLayout {
         spacing: 10
