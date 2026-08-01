@@ -15,7 +15,7 @@ FAIL=0
 "$REPO/tests/widgets-smoke.sh" --static || FAIL=1
 
 PROBES=(
-    "androidWebcam barIndicator -g 200x60"
+    "androidWebcam barIndicator -p shown=true -g 200x60" # Zero width without a phone
     "hello barIndicator -x tests/fixtures/hello -g 200x60" # The external path too
 )
 
