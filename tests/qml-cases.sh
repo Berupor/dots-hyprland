@@ -9,18 +9,36 @@
 # A case that needs widget options starts the line with the widget: `//@ probe
 # dotsUpdates -o notify=true`.
 #
-#   tests/qml-cases.sh [name ...]   # bare names, default all cases
+#   tests/qml-cases.sh [name ...]         # bare names, default all cases
+#   tests/qml-cases.sh -x <widget dir>    # demo/*.qml of a widget repo
 #
 # One instance per case, so put several fixtures in one file rather than
 # splitting checks across files. Needs a Wayland session: grabbing aside, the
 # harness only renders in a real window.
+#
+# A widget outside the tree keeps its cases in its own demo/, out of the way of the
+# files a user installs (`import ".."` reaches them, qmldir singleton included). A
+# scene feeds the widget's own singleton whatever state it wants drawn, so nothing
+# needs faking from the host side, and shots.txt shoots the same files.
 set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 FAIL=0
+XDIR=""
+
+while getopts "x:" flag; do
+    case "$flag" in
+        x) XDIR=$OPTARG ;;
+    esac
+done
+shift $((OPTIND - 1))
 
 CASES=()
-if [ "$#" -gt 0 ]; then
+if [ -n "$XDIR" ]; then
+    [ "${XDIR#/}" = "$XDIR" ] && XDIR="$REPO/$XDIR"
+    CASES=("$XDIR"/demo/*.qml)
+    [ -e "${CASES[0]}" ] || { echo "no demo/*.qml in $XDIR"; exit 2; }
+elif [ "$#" -gt 0 ]; then
     for name in "$@"; do CASES+=("$REPO/tests/cases/${name%.qml}.qml"); done
 else
     CASES=("$REPO"/tests/cases/*.qml)
@@ -34,7 +52,7 @@ for file in "${CASES[@]}"; do
     # sometimes gets no frame. A case with no checks is caught below anyway.
     # shellcheck disable=SC2086
     # Flags first: a case naming a widget needs it in the leading positional
-    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" $flags -f "$file" 2>&1)
+    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" $flags ${XDIR:+-x "$XDIR"} -f "$file" 2>&1)
     checks=$(grep -c "^check \|^FAIL check " <<< "$out")
     bad=$(grep "^FAIL check \|^FAIL load \|^FAIL no slot" <<< "$out")
     if [ -z "$bad" ] && [ "$checks" -gt 0 ]; then
