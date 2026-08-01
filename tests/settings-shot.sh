@@ -57,7 +57,8 @@ hyprctl dispatch "hl.dsp.exec_cmd(\"[$RULES] $TMP/run.sh\")" > /dev/null
 
 GEO=""
 for _ in $(seq 40); do
-    GEO=$(hyprctl clients -j | jq -r '.[] | select(.title == "illogical-impulse Settings") | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"' | head -1)
+    # By size too: a settings window you already have open answers to the title as well
+    GEO=$(hyprctl clients -j | jq -r --argjson w "$W" --argjson h "$H" '.[] | select(.title == "illogical-impulse Settings" and .size[0] == $w and .size[1] == $h) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"' | head -1)
     [ -n "$GEO" ] && break
     sleep 0.5
 done
