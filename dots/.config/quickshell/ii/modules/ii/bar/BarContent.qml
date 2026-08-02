@@ -2,7 +2,6 @@ import qs.modules.ii.bar.weather
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Services.UPower
 import qs
 import qs.services
 import qs.modules.common
@@ -196,14 +195,6 @@ Item { // Bar content region
                 WidgetSlot {
                     slot: "barIndicator"
                     shown: root.useShortenedForm < 2
-                    // Indicators hug their glyph, the battery pill is filled to its edge:
-                    // matches the gaps the util buttons and the pill make on their own
-                    spacing: 12
-                }
-
-                BatteryIndicator {
-                    visible: (root.useShortenedForm < 2 && Battery.available)
-                    Layout.alignment: Qt.AlignVCenter
                 }
             }
         }
