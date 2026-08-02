@@ -20,6 +20,8 @@ Repeater {
     property bool shown: true
     /// Gap after each item, along the layout
     property real spacing: 0
+    /// Gap before each item, for hosts that space their own children that way
+    property real spacingBefore: 0
 
     model: WidgetCatalog.forSlot(root.slot, root.vertical ? "vertical" : "horizontal")
     delegate: Loader {
@@ -27,6 +29,8 @@ Repeater {
         Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter
         Layout.rightMargin: root.vertical ? 0 : root.spacing
         Layout.bottomMargin: root.vertical ? root.spacing : 0
+        Layout.leftMargin: root.vertical ? 0 : root.spacingBefore
+        Layout.topMargin: root.vertical ? root.spacingBefore : 0
         visible: root.shown && (item?.shown ?? true)
         // setSource, not source: initialProperties only land through it. `vertical`
         // only when it is, so widgets built before it keep loading unchanged

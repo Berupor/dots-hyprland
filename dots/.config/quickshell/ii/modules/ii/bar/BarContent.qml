@@ -123,6 +123,12 @@ Item { // Bar content region
                 Layout.fillWidth: root.useShortenedForm === 2
             }
 
+            WidgetSlot {
+                slot: "barGauge"
+                shown: root.useShortenedForm < 2
+                spacingBefore: 6 // The gap the resource circles keep between themselves
+            }
+
             Media {
                 visible: root.useShortenedForm < 2
                 Layout.fillWidth: true

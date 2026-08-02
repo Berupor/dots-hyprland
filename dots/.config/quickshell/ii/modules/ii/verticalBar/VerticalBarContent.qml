@@ -93,7 +93,13 @@ Item { // Bar content region
                 Layout.fillWidth: true
                 Layout.fillHeight: false
             }
-            
+
+            WidgetSlot {
+                slot: "barGauge"
+                vertical: true
+                spacingBefore: 10 // The gap the resource circles keep between themselves
+            }
+
             HorizontalBarSeparator {}
 
             VerticalMedia {
