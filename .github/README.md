@@ -66,6 +66,8 @@ Every widget below has its own pictures and options:
   right-sidebar tab.
 - [Android webcam](https://github.com/Berupor/ii-widget-android-webcam): a phone
   plugged in as a USB webcam, and the adb call that puts it in that mode.
+- [KDE Connect](https://github.com/Berupor/ii-widget-kdeconnect): the phone's charge
+  by the color of a bar button, and ring, clipboard and files from its menu.
 - [Statusphere](https://github.com/Berupor/ii-widget-statusphere): a room of
   friends on the desktop, client for
   [statusphere](https://github.com/MAX1T1A/statusphere).

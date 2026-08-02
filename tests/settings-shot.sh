@@ -18,7 +18,10 @@ BROWSE=0
 [ "${1:-}" = "-b" ] && { BROWSE=1; shift; }
 [ "$BROWSE" = 1 ] && NAME=widgets-registry || NAME=widgets-page
 OUT="${1:-$REPO/.github/assets/$NAME.png}"
-EXTERNAL="androidWebcam hello peripheralBattery statusphere vpn" # Installed widgets left in the catalog
+EXTERNAL="androidWebcam hello kdeconnect peripheralBattery statusphere vpn" # Installed widgets left in the catalog
+# The Browse card lists what the registry knows and the catalog does not, so that shot
+# leaves two of them uninstalled instead of depending on what this machine happens to have
+[ "$BROWSE" = 1 ] && EXTERNAL="androidWebcam hello kdeconnect vpn"
 ENABLED='["peripheralBattery","vpn"]'
 PAGE=5                                       # Widgets, see the pages list in settings.qml
 SCALE=1.5                                    # Bigger than 1 for a crisp png, small enough to fit the screen
