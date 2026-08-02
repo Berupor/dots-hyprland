@@ -57,6 +57,7 @@ post_process() {
 
     handle_kde_material_you_colors &
     "$SCRIPT_DIR/code/material-code-set-color.sh" &
+    "$SCRIPT_DIR/apply_vivaldi.py" &
 }
 
 check_and_prompt_upscale() {
@@ -104,7 +105,8 @@ CUSTOM_DIR="$XDG_CONFIG_HOME/hypr/custom"
 RESTORE_SCRIPT_DIR="$CUSTOM_DIR/scripts"
 RESTORE_SCRIPT="$RESTORE_SCRIPT_DIR/__restore_video_wallpaper.sh"
 THUMBNAIL_DIR="$RESTORE_SCRIPT_DIR/mpvpaper_thumbnails"
-VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no"
+VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no deband=yes"
+VIDEO_FLAGS="-p" # Stop decoding while the wallpaper is covered
 
 is_video() {
     local extension="${1##*.}"
@@ -125,7 +127,7 @@ create_restore_script() {
 pkill -f -9 mpvpaper
 
 for monitor in \$(hyprctl monitors -j | jq -r '.[] | .name'); do
-    mpvpaper -o "$VIDEO_OPTS" "\$monitor" "$video_path" &
+    mpvpaper $VIDEO_FLAGS -o "$VIDEO_OPTS" "\$monitor" "$video_path" &
     sleep 0.1
 done
 EOF
@@ -230,7 +232,7 @@ switch() {
             local video_path="$imgpath"
             monitors=$(hyprctl monitors -j | jq -r '.[] | .name')
             for monitor in $monitors; do
-                mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
+                mpvpaper $VIDEO_FLAGS -o "$VIDEO_OPTS" "$monitor" "$video_path" &
                 sleep 0.1
             done
 
