@@ -169,7 +169,9 @@ chmod +x "$CFG/run.sh"
 
 echo "probe ${WIDGET:-$FILE}${SLOT:+/$SLOT}  options $(jq -c --arg w "$WIDGET" '.options[$w] // {}' "$CFG/illogical-impulse/widgets.json")${PROPS#\{\}}"
 
-RULES="float;size 8 8;move 100%-8 100%-8;noinitialfocus;noanim;noborder;noshadow"
+RULES="float;size 8 8;move 100%-8 100%-8;noanim;noborder;noshadow"
+# noinitialfocus alone doesn't stop misc:focus_on_activate, hyprwm/Hyprland#12357
+command -v hyprctl > /dev/null && hyprctl eval 'if not _G.__widget_probe_norule then hl.window_rule({match = {title = "^(qs-harness)$"}, no_initial_focus = true, focus_on_activate = false}); _G.__widget_probe_norule = true end' > /dev/null
 if command -v hyprctl > /dev/null && hyprctl dispatch "hl.dsp.exec_cmd(\"[$RULES] $CFG/run.sh > $LOG 2>&1\")" > /dev/null; then
     : # Spawned out of the way, keeps focus and the current workspace as they are
 else
