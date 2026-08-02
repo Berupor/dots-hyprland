@@ -8,6 +8,8 @@ import Quickshell.Io
  *    Service singletons go flat into modules/widgets/ (dynamically loaded
  *    files resolve `import qs.modules.widgets`, but not subdir modules)
  * 2. Slot paths are relative to the widget dir; barIndicator files expose `shown`.
+ *    barGauge is the same file in another place: next to the resource circles, for
+ *    widgets drawn as one (ClippedFilledCircularProgress plus a number).
  *    Bar slots draw for the orientations they list: `{"path": ..., "orientations":
  *    ["horizontal", "vertical"]}`, either one alone is as good as both. The bare-path
  *    form means horizontal. A vertical host hands the file `vertical: true`, so one
