@@ -68,7 +68,12 @@ executables of its own.
 ## Before publishing
 
 `tests/design-lint.sh <your-repo>` and `tests/qml-cases.sh -x <your-repo>` clean,
-store writes from a click handler (`onClicked`) rather than a binding
-(`onCheckedChanged` loops on a store write, since the store recreates its data
-object every time), and a `demo/` scene that doubles as your test and your
-README screenshot - `ii-widget-hello` has the shape of all three.
+a `demo/` scene that doubles as your test and your README screenshot -
+`ii-widget-hello` has the shape of both - and, if your `settingsPage` writes to
+the store itself, an idempotent write: whatever your `onXChanged` handler hands
+`setOption` has to match what the binding just read from `optionValue()`,
+because that handler also fires on the binding's own initial assignment, not
+just on user input. Prefer a real commit signal where the control has one
+(`SpinBox.valueModified`, `TextField.editingFinished`) - it skips that spurious
+write-back. Continuous input (typing, dragging) has no such signal, so the
+idempotent on-changed write is the pattern there, not a shortcut around one.
