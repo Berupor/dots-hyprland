@@ -74,7 +74,7 @@ Every widget below has its own pictures and options:
 - [VPN](https://github.com/Berupor/ii-widget-vpn): NetworkManager profiles and
   tailscale exit nodes, from a button in the bar.
 - [Hello](https://github.com/Berupor/ii-widget-hello): the template to copy when
-  writing your own.
+  writing your own - the contract itself is [docs/widgets.md](../docs/widgets.md).
 
 ## Not widgets, just patches
 

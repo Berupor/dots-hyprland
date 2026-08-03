@@ -13,6 +13,7 @@ REPO=$(git rev-parse --show-toplevel)
 FAIL=0
 
 "$REPO/tests/widgets-smoke.sh" --static || FAIL=1
+"$REPO/tests/verify-widget-docs.sh" || FAIL=1
 
 # No widget ships in the tree, so the fixture is what there is to render here.
 # Widgets of my own are probed by the pre-push hook in their own repositories.
