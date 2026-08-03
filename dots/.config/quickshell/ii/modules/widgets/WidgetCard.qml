@@ -187,13 +187,7 @@ CatalogCard {
                         color: Appearance.colors.colOnLayer2
                         placeholderText: optLoader.modelData.placeholder ?? ""
                         text: root.manifest.optionValue(optLoader.modelData.key) ?? ""
-                        onTextChanged: commitText.restart()
-
-                        Timer {
-                            id: commitText
-                            interval: 400 // Every keystroke would rewrite widgets.json
-                            onTriggered: WidgetsStore.setOption(root.manifest.widgetId, optLoader.modelData.key, textField.text.trim())
-                        }
+                        onTextChanged: WidgetsStore.setOption(root.manifest.widgetId, optLoader.modelData.key, textField.text.trim())
                     }
                 }
             }

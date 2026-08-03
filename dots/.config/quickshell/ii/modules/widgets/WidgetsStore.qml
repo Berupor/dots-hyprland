@@ -31,7 +31,17 @@ Singleton {
     }
 
     function save() {
+        saveTimer.restart()
+    }
+
+    function writeFile() {
         fileView.setText(JSON.stringify(root.data, null, 2))
+    }
+
+    Timer {
+        id: saveTimer
+        interval: 400 // Coalesce frequent writers (text fields, spin boxes)
+        onTriggered: root.writeFile()
     }
 
     FileView {
