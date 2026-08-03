@@ -42,12 +42,13 @@
 # Grabbing needs a rendering window, and a hidden one does not render, hence
 # the corner. Slots that only exist for some option value need that -o.
 # harness.qml lives here but is copied into the ii dir for the run, since
-# `import qs.*` resolves against the config root. Runs serialize on a flock.
+# `import qs.*` resolves against the config root. Named per-PID so parallel
+# probes don't share a file or a pkill pattern.
 set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 II="$REPO/dots/.config/quickshell/ii"
-HARNESS="$II/harness.qml" # Copied in for the run, `import qs.*` needs it in the ii root
+HARNESS="$II/.probe-harness.$$.qml" # Copied in for the run, `import qs.*` needs it in the ii root
 OUT="${QS_PROBE_OUT:-/tmp/widget-probe.png}"
 OPTS='{}'
 KEYS='{}'
@@ -103,9 +104,6 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# The harness copy and the pkill pattern are shared, so runs have to queue up
-exec 9> /tmp/widget-probe.lock
-flock -w 120 9 || { echo "another probe holds the lock"; exit 2; }
 cp "$REPO/tests/harness.qml" "$HARNESS"
 
 # Throwaway config dir seeded from the real one, so theme and colors match but

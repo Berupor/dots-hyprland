@@ -11,10 +11,13 @@
 #
 #   tests/qml-cases.sh [name ...]         # bare names, default all cases
 #   tests/qml-cases.sh -x <widget dir>    # demo/*.qml of a widget repo
+#   tests/qml-cases.sh -j N               # concurrent probes, default 4
 #
 # One instance per case, so put several fixtures in one file rather than
 # splitting checks across files. Needs a Wayland session: grabbing aside, the
-# harness only renders in a real window.
+# harness only renders in a real window. Cases run -j at a time, each in its
+# own probe (own harness copy, own config dir), output collected and printed
+# in case order once everything finishes.
 #
 # A widget outside the tree keeps its cases in its own demo/, out of the way of the
 # files a user installs (`import ".."` reaches them, qmldir singleton included). A
@@ -25,10 +28,12 @@ set -u
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 FAIL=0
 XDIR=""
+JOBS=4
 
-while getopts "x:" flag; do
+while getopts "x:j:" flag; do
     case "$flag" in
         x) XDIR=$OPTARG ;;
+        j) JOBS=$OPTARG ;;
     esac
 done
 shift $((OPTIND - 1))
@@ -44,15 +49,31 @@ else
     CASES=("$REPO"/tests/cases/*.qml)
 fi
 
+TMP=$(mktemp -d /tmp/qml-cases.XXXXXX)
+trap 'rm -rf "$TMP"' EXIT
+
+names=()
 for file in "${CASES[@]}"; do
     name=$(basename "$file" .qml)
-    [ -f "$file" ] || { echo "case FAIL $name: no such case"; FAIL=1; continue; }
+    names+=("$name")
+    [ -f "$file" ] || continue
     flags=$(sed -n '1s|^//@ probe ||p' "$file")
     # Exit code ignored on purpose: it also fails on a missing PNG, and the grab
     # sometimes gets no frame. A case with no checks is caught below anyway.
     # shellcheck disable=SC2086
     # Flags first: a case naming a widget needs it in the leading positional
-    out=$(QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" $flags ${XDIR:+-x "$XDIR"} -f "$file" 2>&1)
+    QS_PROBE_OUT="/tmp/qml-case-$name.png" "$REPO/tests/widget-probe.sh" $flags ${XDIR:+-x "$XDIR"} -f "$file" > "$TMP/$name.out" 2>&1 &
+    while [ "$(jobs -r -p | wc -l)" -ge "$JOBS" ]; do wait -n; done
+done
+wait
+
+for name in "${names[@]}"; do
+    if [ ! -f "$TMP/$name.out" ]; then
+        echo "case FAIL $name: no such case"
+        FAIL=1
+        continue
+    fi
+    out=$(<"$TMP/$name.out")
     checks=$(grep -c "^check \|^FAIL check " <<< "$out")
     bad=$(grep "^FAIL check \|^FAIL load \|^FAIL no slot" <<< "$out")
     if [ -z "$bad" ] && [ "$checks" -gt 0 ]; then
