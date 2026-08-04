@@ -77,12 +77,14 @@ Singleton {
 
             // Parse CPU usage
             const textStat = fileStat.text()
-            const cpuLine = textStat.match(/^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
+            const cpuLine = textStat.match(/^cpu\s+([\d\s]+)/)
             if (cpuLine) {
-                const stats = cpuLine.slice(1).map(Number)
-                const total = stats.reduce((a, b) => a + b, 0)
-                // Cpu executes nothing while waiting on I/O, so iowait is not busy
-                const idle = stats[3] + stats[4]
+                const stats = cpuLine[1].trim().split(/\s+/).map(Number)
+                // Guest time is already counted inside user/nice
+                const guest = stats.length > 8 ? stats[8] + stats[9] : 0
+                const total = stats.reduce((a, b) => a + b, 0) - guest
+                // Cpu executes nothing while waiting on I/O, so iowait is not busy either
+                const idle = stats[3] + (stats.length > 4 ? stats[4] : 0)
 
                 if (previousCpuStats) {
                     const totalDiff = total - previousCpuStats.total
