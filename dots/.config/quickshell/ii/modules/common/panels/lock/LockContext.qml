@@ -129,7 +129,7 @@ Scope {
             if (result == PamResult.Success) {
                 root.unlocked(root.targetAction);
                 stopFingerPam();
-            } else if (GlobalStates.screenLocked) { // any non-success (Failed on bad read, Error on timeout): re-arm so the next finger press is actually heard
+            } else if (result == PamResult.Error) { // if timeout or etc..
                 tryFingerUnlock()
             }
         }
