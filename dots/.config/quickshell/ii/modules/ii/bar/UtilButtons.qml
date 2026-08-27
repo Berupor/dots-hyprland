@@ -12,7 +12,7 @@ import Quickshell.Services.UPower
 Item {
     id: root
     property bool borderless: Config.options.bar.borderless
-    implicitWidth: rowLayout.implicitWidth + rowLayout.spacing * 2
+    implicitWidth: rowLayout.implicitWidth // No extra air: the group sits in a padded BarGroup, next to the indicator slot
     implicitHeight: rowLayout.implicitHeight
 
     RowLayout {
