@@ -14,6 +14,11 @@ Item {
 
     // Repo name on purpose different from the widget id inside it
     readonly property string source: `${Directories.shellConfig}/installer-src/some-repo`
+    // The fixture repo answers to nothing on the machine: no user hooks, no signing key,
+    // no identity to inherit. Only the commits below are made this way, the installer
+    // itself runs git the way the user has it
+    readonly property list<string> gitEnv: ["GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
+        "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"]
     property var seen: ({}) // Each step overwrites the singleton, so snapshot as they land
     property int step: 0
 
@@ -98,14 +103,14 @@ Item {
     Process {
         id: prepare
         running: true
-        command: ["env", `IS=${probe.source}`, `IH=${WidgetCatalog.externalDir}/hello`, "bash", "-c", `
+        command: ["env", `IS=${probe.source}`, `IH=${WidgetCatalog.externalDir}/hello`, ...probe.gitEnv, "bash", "-c", `
             set -e
             mkdir -p "$(dirname "$IS")"
             cp -r "$IH" "$IS"
             sed -i 's/widgetId: "hello"/widgetId: "hello-clone"/' "$IS/Manifest.qml"
             git -C "$IS" init -q
             git -C "$IS" add -A
-            git -C "$IS" -c user.email=t@t -c user.name=t commit -qm fixture`]
+            git -C "$IS" commit -qm fixture`]
         onExited: exitCode => {
             if (exitCode !== 0) {
                 probe.seen = Object.assign({}, probe.seen, { "install": "prepare failed" });
@@ -117,10 +122,10 @@ Item {
 
     Process {
         id: bump
-        command: ["env", `IS=${probe.source}`, "bash", "-c", `
+        command: ["env", `IS=${probe.source}`, ...probe.gitEnv, "bash", "-c", `
             set -e
             sed -i 's/^\\([[:space:]]*\\)version: "1.0"/\\1version: "1.1"/' "$IS/Manifest.qml"
-            git -C "$IS" -c user.email=t@t -c user.name=t commit -aqm bump`]
+            git -C "$IS" commit -aqm bump`]
         onExited: WidgetInstaller.update("hello-clone")
     }
 
